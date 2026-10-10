@@ -3280,3 +3280,115 @@ setInterval(function(){
 
   console.log("[FIX v114] applied");
 })();
+// ===================================================
+// ====== СЕРВЕРНЫЕ ФУНКЦИИ ДЛЯ ЛС, КЛАНОВ И ДРУЗЕЙ ==
+// ===================================================
+
+// Проверка инициализации базы данных Firebase
+var db = null;
+try {
+    if (typeof firebase !== 'undefined' && firebase.database) {
+        db = firebase.database();
+    }
+} catch(e) {
+    console.error("Firebase не подключен:", e);
+}
+
+// 1. Поиск пользователей (Друзья / Кланы)
+function _socialDoSearch(query, callback) {
+    if (!db) return callback(null);
+    var q = query.trim().toLowerCase();
+    db.ref("users").once("value").then(function(snap) {
+        var users = snap.val() || {};
+        var found = [];
+        Object.keys(users).forEach(function(uid) {
+            var u = users[uid];
+            if (u.nickname && u.nickname.toLowerCase().includes(q)) {
+                found.push({ id: uid, nickname: u.nickname, shortId: u.shortId || "" });
+            }
+        });
+        callback(found);
+    }).catch(function() { callback([]); });
+}
+
+// 2. Создание клана
+function clanCreate(name, tag, desc, type, callback) {
+    if (!db || !profile.id) return callback(false);
+    
+    var clanData = {
+        name: name,
+        tag: tag,
+        description: desc,
+        type: type,
+        ownerId: profile.id,
+        invested: 0,
+        level: 1,
+        members: {}
+    };
+    
+    var newClanRef = db.ref("clans").push();
+    var clanId = newClanRef.key;
+    
+    var updates = {};
+    updates["clans/" + clanId] = clanData;
+    updates["clans/" + clanId + "/members/" + profile.id] = { role: "owner", joinedAt: firebase.database.ServerValue.TIMESTAMP };
+    updates["clanTags/" + tag] = clanId;
+    updates["users/" + profile.id + "/clanId"] = clanId;
+    
+    db.ref().update(updates).then(function() {
+        callback(true);
+    }).catch(function() {
+        callback(false);
+    });
+}
+
+// 3. Вступление в клан
+function clanJoin(clanId) {
+    if (!db || !profile.id) return;
+    
+    db.ref("clans/" + clanId).once("value").then(function(snap) {
+        var clan = snap.val();
+        if (!clan) return;
+        
+        var updates = {};
+        updates["users/" + profile.id + "/clanId"] = clanId;
+        updates["clans/" + clanId + "/members/" + profile.id] = { 
+            role: "member", 
+            joinedAt: firebase.database.ServerValue.TIMESTAMP 
+        };
+        
+        db.ref().update(updates).then(function() {
+            if (typeof updateUI === "function") updateUI();
+        });
+    });
+}
+
+// 4. Отправка сообщения в чат клана
+function clanSendChat(text) {
+    if (!db || !profile.id || !text.trim()) return;
+    
+    db.ref("users/" + profile.id + "/clanId").once("value").then(function(snap) {
+        var clanId = snap.val();
+        if (!clanId) return;
+        
+        db.ref("clans/" + clanId + "/chat").push().set({
+            senderId: profile.id,
+            text: text.trim(),
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+    });
+}
+
+// 5. Отправка Личного Сообщения (ЛС)
+function dmSend(text) {
+    if (!db || !profile.id || !currentChatPartnerId || !text.trim()) return;
+    
+    var partnerId = currentChatPartnerId;
+    var chatId = profile.id < partnerId ? profile.id + "_" + partnerId : partnerId + "_" + profile.id;
+    
+    db.ref("chats/" + chatId).push().set({
+        senderId: profile.id,
+        text: text.trim(),
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+}
