@@ -3147,3 +3147,136 @@ setInterval(function(){
 
   console.log("[FIX v113] Все кнопки привязаны");
 })();
+// ===== ФИНАЛЬНЫЙ ФИКС v114 =====
+(function(){
+  function bind(id, fn){ var e=document.getElementById(id); if(e) e.onclick=fn; }
+  function open(id){ var m=document.getElementById(id); if(m){ m.classList.remove("hidden"); if(typeof syncScrollLock==="function") syncScrollLock(); } }
+
+  // Боковые кнопки
+  bind("clan-side-btn", function(e){ e.preventDefault(); open("modal-clans"); try{ if(typeof clanSetupUI==="function") clanSetupUI(); if(typeof clanLoadMy==="function") clanLoadMy(); }catch(err){} });
+  bind("dm-side-btn",   function(e){ e.preventDefault(); open("modal-dm"); });
+  bind("almanac-btn",   function(e){ e.preventDefault(); open("modal-almanac"); });
+
+  // Друзья — вкладки
+  document.querySelectorAll(".friends-tab").forEach(function(tb){
+    tb.onclick=function(){
+      document.querySelectorAll(".friends-tab").forEach(function(x){x.classList.remove("active");});
+      tb.classList.add("active");
+      var pane=tb.dataset.ftab;
+      document.querySelectorAll(".friends-pane").forEach(function(p){p.classList.add("hidden");});
+      var pv=document.getElementById("friends-pane-"+pane);
+      if(pv) pv.classList.remove("hidden");
+    };
+  });
+
+  // Друзья — копировать ID
+  var cp=document.getElementById("friends-copy-id");
+  if(cp) cp.onclick=function(){
+    var el=document.getElementById("friends-my-id");
+    if(!el) return;
+    var txt=el.textContent;
+    try{ navigator.clipboard.writeText(txt); alert("📋 "+txt); }catch(e){ prompt("Скопируй:", txt); }
+  };
+
+  // Друзья — поиск
+  var sb=document.getElementById("friends-search-btn");
+  var si=document.getElementById("friends-search-input");
+  if(sb && si) sb.onclick=function(){
+    if(typeof _socialDoSearch==="function"){ _socialDoSearch(); return; }
+    var box=document.getElementById("friends-search-result");
+    if(box) box.innerHTML="<p class='friends-empty'>Поиск недоступен</p>";
+  };
+
+  // Клан — вкладки (Мой/Поиск/Создать)
+  document.querySelectorAll(".clan-tab").forEach(function(tb){
+    tb.onclick=function(){
+      document.querySelectorAll(".clan-tab").forEach(function(x){x.classList.remove("active");});
+      tb.classList.add("active");
+      var t=tb.dataset.ctab;
+      document.querySelectorAll(".clan-pane").forEach(function(p){p.classList.add("hidden");});
+      var pv=document.getElementById("clan-pane-"+t);
+      if(pv) pv.classList.remove("hidden");
+    };
+  });
+
+  // Клан — sub-вкладки (Участники/Чат/Заявки)
+  document.querySelectorAll(".clan-subtab").forEach(function(tb){
+    tb.onclick=function(){
+      document.querySelectorAll(".clan-subtab").forEach(function(x){x.classList.remove("active");});
+      tb.classList.add("active");
+      var t=tb.dataset.cstab;
+      document.querySelectorAll(".clan-subpane").forEach(function(p){p.classList.add("hidden");});
+      var pv=document.getElementById("clan-sub-"+t);
+      if(pv) pv.classList.remove("hidden");
+    };
+  });
+
+  // Клан — создание
+  var cc=document.getElementById("clan-create-submit");
+  if(cc) cc.onclick=function(){
+    var n=document.getElementById("clan-create-name");
+    var t=document.getElementById("clan-create-tag");
+    var d=document.getElementById("clan-create-desc");
+    var er=document.getElementById("clan-create-error");
+    var ty=document.querySelector('input[name="clan-type"]:checked');
+    var name=n?n.value.trim():"";
+    var tag=t?t.value.trim().toUpperCase():"";
+    if(er) er.textContent="";
+    if(name.length<3){ if(er) er.textContent="Название: 3–20 символов"; return; }
+    if(!/^[A-Z]{2,4}$/.test(tag)){ if(er) er.textContent="Тег: 2–4 латинские буквы"; return; }
+    if(typeof crystals!=="undefined" && crystals<500){ if(er) er.textContent="Нужно 500 💎"; return; }
+    if(typeof clanCreate!=="function"){ if(er) er.textContent="Модуль клана не загружен"; return; }
+    clanCreate(name, tag, d?d.value.trim():"", ty?ty.value:"open", function(ok){
+      if(ok){ crystals-=500; if(typeof updateUI==="function") updateUI(); if(typeof saveGame==="function") saveGame(); if(er) er.textContent="✅ Готово"; }
+      else { if(er) er.textContent="Ошибка создания"; }
+    });
+  };
+
+  // Клан — поиск
+  var cs=document.getElementById("clan-search-btn");
+  if(cs) cs.onclick=function(){
+    var inp=document.getElementById("clan-search-input");
+    var out=document.getElementById("clan-search-results");
+    if(!inp || !out) return;
+    var q=inp.value.trim().toLowerCase();
+    if(!q){ out.innerHTML='<p class="clan-empty-msg">Введи название или тег</p>'; return; }
+    if(typeof db==="undefined" || !db){ out.innerHTML='<p class="clan-empty-msg">Firebase недоступен</p>'; return; }
+    out.innerHTML='<p class="clan-empty-msg">Поиск...</p>';
+    db.ref("clans").once("value").then(function(s){
+      var c=s.val()||{}, found=[];
+      for(var k in c){
+        var nm=String(c[k].name||"").toLowerCase();
+        var tg=String(c[k].tag||"").toLowerCase();
+        if(nm.indexOf(q)!==-1 || tg.indexOf(q)!==-1) found.push({id:k, d:c[k]});
+      }
+      if(!found.length){ out.innerHTML='<p class="clan-empty-msg">Не найдено</p>'; return; }
+      out.innerHTML = found.map(function(x){
+        var mc = x.d.members ? Object.keys(x.d.members).length : 0;
+        return '<div class="clan-card"><div class="clan-card-row"><div class="clan-card-tag">'+(x.d.tag||"?")+'</div><div class="clan-card-info"><div class="clan-card-name">'+(x.d.name||"—")+'</div><div class="clan-card-meta">'+mc+'/10</div></div></div><button class="clan-primary-btn" style="margin-top:6px" data-join="'+x.id+'">🚪 Вступить</button></div>';
+      }).join("");
+      out.querySelectorAll("[data-join]").forEach(function(b){
+        b.onclick=function(){ if(typeof clanJoin==="function") clanJoin(b.dataset.join); };
+      });
+    }).catch(function(e){ out.innerHTML='<p class="clan-empty-msg" style="color:#ff5252">'+e.message+'</p>'; });
+  };
+
+  // Клан — чат
+  var chS=document.getElementById("clan-chat-send");
+  var chI=document.getElementById("clan-chat-input");
+  if(chS && chI) chS.onclick=function(){
+    var v=chI.value.trim();
+    if(!v) return;
+    if(typeof clanSendChat==="function"){ clanSendChat(v); chI.value=""; }
+  };
+
+  // ЛС — отправка
+  var dmS=document.getElementById("dm-send");
+  var dmI=document.getElementById("dm-input");
+  if(dmS && dmI) dmS.onclick=function(){
+    var v=dmI.value.trim();
+    if(!v) return;
+    if(typeof dmSend==="function"){ dmSend(v); dmI.value=""; }
+  };
+
+  console.log("[FIX v114] applied");
+})();
