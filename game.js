@@ -3392,3 +3392,13 @@ function dmSend(text) {
         timestamp: firebase.database.ServerValue.TIMESTAMP
     });
     }
+// ===== ТЕСТ v123 =====
+(function(){
+  var b = document.getElementById("clan-side-btn");
+  if(!b){ alert("ТЕСТ: кнопки 🏰 нет в HTML"); return; }
+  b.onclick = function(e){
+    e.preventDefault();
+    alert("ТЕСТ: кнопка 🏰 нажата");
+  };
+  alert("ТЕСТ: обработчик привязан");
+})();
