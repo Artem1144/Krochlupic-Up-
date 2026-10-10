@@ -2915,3 +2915,235 @@ setInterval(function(){
   });
   console.log("[bind] side buttons ready");
 })();
+// ===== ФИНАЛЬНЫЙ ФИКС v113 — кнопки Клан/ЛС/Альманах =====
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function openModal(id){
+    var m = byId(id);
+    if(!m) return false;
+    m.classList.remove("hidden");
+    if(typeof syncScrollLock === "function") syncScrollLock();
+    return true;
+  }
+  function closeModal(id){
+    var m = byId(id);
+    if(m) m.classList.add("hidden");
+    if(typeof syncScrollLock === "function") syncScrollLock();
+  }
+
+  // 1. БОКОВЫЕ КНОПКИ
+  var cb = byId("clan-side-btn");
+  if(cb) cb.onclick = function(e){
+    e.preventDefault();
+    if(typeof playSound === "function") playSound("ui");
+    openModal("modal-clans");
+    try{
+      if(typeof clanSetupUI === "function") clanSetupUI();
+      if(typeof clanLoadMy === "function") clanLoadMy();
+    }catch(err){ console.log("[clan] setup err", err.message); }
+  };
+
+  var db_btn = byId("dm-side-btn");
+  if(db_btn) db_btn.onclick = function(e){
+    e.preventDefault();
+    if(typeof playSound === "function") playSound("ui");
+    openModal("modal-dm");
+  };
+
+  var al = byId("almanac-btn");
+  if(al) al.onclick = function(e){
+    e.preventDefault();
+    openModal("modal-almanac");
+  };
+
+  // 2. ВКЛАДКИ КЛАНА (Мой / Поиск / Создать)
+  document.querySelectorAll(".clan-tab").forEach(function(tb){
+    tb.onclick = function(){
+      document.querySelectorAll(".clan-tab").forEach(function(x){ x.classList.remove("active"); });
+      tb.classList.add("active");
+      var tab = tb.dataset.ctab;
+      document.querySelectorAll(".clan-pane").forEach(function(p){ p.classList.add("hidden"); });
+      var pane = byId("clan-pane-" + tab);
+      if(pane) pane.classList.remove("hidden");
+    };
+  });
+
+  // 3. Кнопки-переходы ("Создать клан" / "Найти клан" в пустом экране)
+  document.querySelectorAll("[data-ctab-jump]").forEach(function(b){
+    b.onclick = function(){
+      var target = b.dataset.ctabJump;
+      document.querySelectorAll(".clan-tab").forEach(function(x){
+        x.classList.toggle("active", x.dataset.ctab === target);
+      });
+      document.querySelectorAll(".clan-pane").forEach(function(p){ p.classList.add("hidden"); });
+      var pane = byId("clan-pane-" + target);
+      if(pane) pane.classList.remove("hidden");
+    };
+  });
+
+  // 4. SUB-ВКЛАДКИ (Участники / Чат / Заявки)
+  document.querySelectorAll(".clan-subtab").forEach(function(tb){
+    tb.onclick = function(){
+      document.querySelectorAll(".clan-subtab").forEach(function(x){ x.classList.remove("active"); });
+      tb.classList.add("active");
+      var tab = tb.dataset.cstab;
+      document.querySelectorAll(".clan-subpane").forEach(function(p){ p.classList.add("hidden"); });
+      var pane = byId("clan-sub-" + tab);
+      if(pane) pane.classList.remove("hidden");
+    };
+  });
+
+  // 5. СОЗДАНИЕ КЛАНА
+  var createBtn = byId("clan-create-submit");
+  if(createBtn) createBtn.onclick = function(){
+    var nameEl = byId("clan-create-name");
+    var tagEl = byId("clan-create-tag");
+    var descEl = byId("clan-create-desc");
+    var errEl = byId("clan-create-error");
+    var typeEl = document.querySelector('input[name="clan-type"]:checked');
+
+    var name = nameEl ? nameEl.value.trim() : "";
+    var tag = tagEl ? tagEl.value.trim().toUpperCase() : "";
+    var desc = descEl ? descEl.value.trim() : "";
+    var type = typeEl ? typeEl.value : "open";
+
+    if(errEl) errEl.textContent = "";
+
+    if(name.length < 3 || name.length > 20){
+      if(errEl) errEl.textContent = "Название: 3–20 символов";
+      return;
+    }
+    if(!/^[A-Z]{2,4}$/.test(tag)){
+      if(errEl) errEl.textContent = "Тег: 2–4 латинские буквы";
+      return;
+    }
+    if(typeof crystals === "undefined" || crystals < 500){
+      if(errEl) errEl.textContent = "Недостаточно кристаллов (нужно 500 💎)";
+      return;
+    }
+    if(typeof clanCreate !== "function"){
+      if(errEl) errEl.textContent = "Модуль клана не загружен";
+      return;
+    }
+    clanCreate(name, tag, desc, type, function(ok){
+      if(ok){
+        crystals -= 500;
+        if(typeof updateUI === "function") updateUI();
+        if(typeof saveGame === "function") saveGame();
+        if(errEl) errEl.textContent = "✅ Клан создан!";
+        setTimeout(function(){
+          document.querySelectorAll(".clan-tab").forEach(function(x){
+            x.classList.toggle("active", x.dataset.ctab === "my");
+          });
+          document.querySelectorAll(".clan-pane").forEach(function(p){ p.classList.add("hidden"); });
+          var pane = byId("clan-pane-my");
+          if(pane) pane.classList.remove("hidden");
+        }, 800);
+      } else {
+        if(errEl) errEl.textContent = "Ошибка создания клана";
+      }
+    });
+  };
+
+  // Переключение активного типа при клике на radio
+  document.querySelectorAll('input[name="clan-type"]').forEach(function(r){
+    r.onchange = function(){
+      document.querySelectorAll(".clan-type-option").forEach(function(o){
+        var inp = o.querySelector("input");
+        o.classList.toggle("active", inp && inp.checked);
+      });
+    };
+  });
+
+  // 6. ПОИСК КЛАНОВ
+  var searchBtn = byId("clan-search-btn");
+  if(searchBtn) searchBtn.onclick = function(){
+    var input = byId("clan-search-input");
+    var results = byId("clan-search-results");
+    if(!input || !results) return;
+    var q = input.value.trim().toLowerCase();
+    if(!q){ results.innerHTML = '<p class="clan-empty-msg">Введи название или тег</p>'; return; }
+    if(typeof db === "undefined" || !db){
+      results.innerHTML = '<p class="clan-empty-msg">Firebase недоступен</p>'; return;
+    }
+    results.innerHTML = '<p class="clan-empty-msg">Поиск...</p>';
+    db.ref("clans").once("value").then(function(snap){
+      var clans = snap.val() || {};
+      var found = [];
+      for(var cid in clans){
+        var c = clans[cid];
+        var n = String(c.name || "").toLowerCase();
+        var t = String(c.tag || "").toLowerCase();
+        if(n.indexOf(q) !== -1 || t.indexOf(q) !== -1) found.push({ id: cid, data: c });
+      }
+      if(found.length === 0){
+        results.innerHTML = '<p class="clan-empty-msg">Не найдено</p>'; return;
+      }
+      var html = "";
+      found.forEach(function(item){
+        var c = item.data;
+        var mc = c.members ? Object.keys(c.members).length : 0;
+        html += '<div class="clan-card">' +
+          '<div class="clan-card-row">' +
+            '<div class="clan-card-tag">' + (c.tag||"?") + '</div>' +
+            '<div class="clan-card-info">' +
+              '<div class="clan-card-name">' + (c.name||"—") + '</div>' +
+              '<div class="clan-card-meta">' + mc + '/10 · ' + (c.type==="open" ? "🔓 Открытый" : "🔒 Закрытый") + '</div>' +
+            '</div>' +
+          '</div>' +
+          (c.description ? '<div class="clan-card-desc">' + c.description + '</div>' : '') +
+          '<button class="clan-primary-btn" style="margin-top:8px" data-join-clan="' + item.id + '">🚪 Вступить</button>' +
+        '</div>';
+      });
+      results.innerHTML = html;
+      results.querySelectorAll("[data-join-clan]").forEach(function(b){
+        b.onclick = function(){
+          if(typeof clanJoin === "function") clanJoin(b.dataset.joinClan);
+        };
+      });
+    }).catch(function(e){
+      results.innerHTML = '<p class="clan-empty-msg" style="color:#ff5252">' + e.message + '</p>';
+    });
+  };
+
+  // 7. ЧАТ КЛАНА
+  var chatSend = byId("clan-chat-send");
+  var chatInput = byId("clan-chat-input");
+  if(chatSend && chatInput){
+    chatSend.onclick = function(){
+      var t = chatInput.value.trim();
+      if(!t) return;
+      if(typeof clanSendChat === "function"){
+        clanSendChat(t);
+        chatInput.value = "";
+      }
+    };
+    chatInput.onkeydown = function(e){ if(e.key === "Enter") chatSend.onclick(); };
+  }
+
+  // 8. ЛС — ОТПРАВКА
+  var dmS = byId("dm-send");
+  var dmI = byId("dm-input");
+  if(dmS && dmI){
+    dmS.onclick = function(){
+      var t = dmI.value.trim();
+      if(!t) return;
+      if(typeof dmSend === "function"){
+        dmSend(t);
+        dmI.value = "";
+      }
+    };
+    dmI.onkeydown = function(e){ if(e.key === "Enter") dmS.onclick(); };
+    dmI.addEventListener("input", function(){
+      var c = byId("dm-counter");
+      if(c) c.textContent = dmI.value.length + "/120";
+    });
+  }
+
+  // 9. ЗАКРЫТИЕ МОДАЛОК
+  document.querySelectorAll('[data-close="modal-clans"]').forEach(function(b){ b.onclick = function(){ closeModal("modal-clans"); }; });
+  document.querySelectorAll('[data-close="modal-dm"]').forEach(function(b){ b.onclick = function(){ closeModal("modal-dm"); }; });
+  document.querySelectorAll('[data-close="modal-almanac"]').forEach(function(b){ b.onclick = function(){ closeModal("modal-almanac"); }; });
+
+  console.log("[FIX v113] Все кнопки привязаны");
+})();
