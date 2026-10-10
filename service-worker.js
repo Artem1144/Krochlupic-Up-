@@ -1,4 +1,4 @@
-var CACHE_NAME = "krohlupic-v103";
+var CACHE_NAME = "krohlupic-v104";
 var URLS = [
   "./",
   "./index.html",
