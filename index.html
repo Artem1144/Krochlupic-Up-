@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>Krochlupic Up!</title>
+<meta name="theme-color" content="#1a1a2e">
+<meta name="application-name" content="Krochlupic Up!">
+<meta name="description" content="Krochlupic Up! — весёлый браузерный кликер с питомцами, скинами и секретами!">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no,address=no,email=no">
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Krochlupic Up!">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta property="og:title" content="Krochlupic Up! — весёлый кликер">
+<meta property="og:description" content="Тапай, качай питомцев, открывай секреты!">
+<meta property="og:image" content="https://artem1144.github.io/Krochlupic-Up/icon-512.png">
+<meta property="og:url" content="https://artem1144.github.io/Krochlupic-Up/">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://www.gstatic.com">
+<link rel="preconnect" href="https://clickerup-80939-default-rtdb.firebaseio.com">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<noscript>
+<div style="padding:24px;color:#fff;background:#1a1a2e;font-family:sans-serif;text-align:center;min-height:100vh;box-sizing:border-box">
+<h2>⚠️ Игра требует JavaScript</h2>
+<p>Включите JavaScript в настройках браузера и обновите страницу.</p>
+</div>
+</noscript>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="save-indicator" class="save-indicator">💾</div>
+<button id="profile-side-btn" title="Профиль">🏅</button>
+<button id="dm-side-btn" class="hidden" title="Сообщения">💬<span id="dm-side-badge" class="dm-side-badge hidden">0</span></button>
+<button id="clan-side-btn" title="Клан">🏰<span id="clan-badge" class="clan-badge hidden">0</span></button>
+<button id="almanac-btn" title="Альманах питомцев">📖</button>
+
+<div id="krohlupic-pet" class="krohlupic-pet hidden">
+<div class="krohlupic-pet-img" id="krohlupic-pet-img" style="background-image:url('krohlupic.jpg'),radial-gradient(circle at 50% 40%,#c9a0d8,#8a4f9e);background-size:contain,cover;background-position:center;background-repeat:no-repeat"></div>
+<div class="krohlupic-pet-hint" id="krohlupic-pet-hint" style="display:none">💬</div>
+</div>
+
+<div class="page page-active" id="page-1">
+<div id="topbar">
+<button class="tab-btn" data-tab="items" data-i18n="tab.items">🛒 Магазин</button>
+<button class="tab-btn" data-tab="boosters" data-i18n="tab.boosters">📦 Бустеры</button>
+<button class="tab-btn" data-tab="achievements" data-i18n="tab.achievements">🏆 Достижения</button>
+<button class="tab-btn" data-tab="quests" data-i18n="tab.quests">📜 Задания</button>
+<button class="tab-btn" data-tab="leaders" data-i18n="tab.leaders">🥇 Лидеры</button>
+<button class="tab-btn" data-tab="friends" data-i18n="tab.friends">👥 Друзья</button>
+<button class="tab-btn" data-tab="skins" data-i18n="tab.skins">🎨 Скины</button>
+<button class="tab-btn" data-tab="stats" data-i18n="tab.stats">📊 Статистика</button>
+<button class="tab-btn" data-tab="settings" data-i18n="tab.settings">⚙️ Настройки</button>
+<button class="tab-btn" data-tab="help" data-i18n="tab.help">❓ Помощь</button>
+<button class="tab-btn hidden" data-tab="reward" id="tab-reward" data-i18n="tab.reward">🏅 Награда</button>
+<button class="tab-btn hidden" data-tab="note" id="tab-note" data-i18n="tab.note">📜 Записка</button>
+</div>
+
+<div id="event-banner" class="hidden"></div>
+<div id="boost-banner" class="hidden"></div>
+
+<h1 id="logo">💰 Krochlupic Up!</h1>
+<div id="counter"><span id="coins">0</span> <span data-i18n="main.coins">монет</span></div>
+<div id="per-second"><span data-i18n="main.per_second">В секунду</span>: <span id="cps">0</span></div>
+<div id="hungry-info" style="display:none" data-i18n="main.hungry">😭 Голодный смайлик: −5M монет/сек</div>
+<div id="gulau-info" style="display:none">🔥 #Gulau: <span data-i18n="main.gulau_mult">×5 тапов, осталось</span> <span id="gulau-timer">15:00</span></div>
+<div id="prestige-info"><span data-i18n="main.crystals">💎 Кристаллов</span>: <span id="crystals">0</span> / 1000</div>
+<div id="season-info" style="font-size:13px;color:#7fb8e6;margin:6px 0">
+🏆 <span data-i18n="season.rating">Сезонный рейтинг</span>: <b id="season-score">0</b>
+<span style="color:#5a6a8a">·</span>
+<span data-i18n="season.left">До конца</span>: <b id="season-time-left">30 д</b>
+</div>
+<div id="blood-info" style="display:none"><span data-i18n="main.blood_moon">🌕 Кровавая луна! До конца</span>: <span id="blood-timer">30:00</span></div>
+<div id="shards-info"><span data-i18n="main.shards">🌑 Кровавых осколков</span>: <span id="shards">0</span> | <span data-i18n="main.bonus">⚔️ Бонус</span>: <span id="item-bonus">+0%</span></div>
+
+<div id="tap-row">
+<button id="deposit-side-btn" title="Вклад">❓</button>
+<button id="click-btn"><span id="tap-cooldown-text"></span><span id="tap-label" data-i18n="main.tap">ТАП</span></button>
+<div id="active-pet-indicator" class="hidden">
+<div id="active-pet-hunger-bar-small">
+<div id="active-pet-hunger-fill-small"></div>
+</div>
+<div id="active-pet-emoji-small">🐹</div>
+</div>
+</div>
+
+<button id="generator-btn" data-i18n="main.generator">⚡ Генератор: Ур. 1</button>
+
+<div id="activity-row">
+<button id="chest-btn" data-i18n="main.chest">🎁 Сундук</button>
+<button id="wheel-btn" data-i18n="main.wheel">🎡 Фортуна</button>
+</div>
+<div id="activity-row-2">
+<button id="daily-btn" data-i18n="main.daily">📅 Ежедневка</button>
+<button id="minigame-btn" data-i18n="main.minigame">⏱️ Мини-игра</button>
+</div>
+<div id="activity-row-3" style="display:none">
+<button id="fnf-btn" data-i18n="main.fnf">🥊 Битва с Крохлюпиком</button>
+</div>
+<button id="fortune-btn" data-i18n="main.fortune">🥠 Что сегодня?</button>
+
+<div id="shop"><h2 data-i18n="main.shop_title">Магазин улучшений</h2><div id="items-tabs"><button class="items-tab active" data-itab="upgrades" data-i18n="main.shop_upgrades">Улучшения</button><button class="items-tab" data-itab="global" data-i18n="main.shop_global">Гл. улучшения</button></div><div id="shop-list"></div><div id="global-shop-list"></div></div>
+</div>
+
+<div class="page" id="page-2">
+<div id="pets-page">
+<h2 id="pets-title" data-i18n="pets.title">🐾 ПИТОМЦЫ</h2>
+<div class="pets-top-bar">
+<div class="pets-top-food">
+<span class="pets-food-item">🍓 <b id="food-strawberry-count">0</b></span>
+<span class="pets-food-item">🍌 <b id="food-banana-count">0</b></span>
+<span class="pets-food-item">🍊 <b id="food-orange-count">0</b></span>
+</div>
+<div class="pets-stat">
+<span class="pets-stat-icon">⭐</span>
+<span class="pets-stat-value" id="pets-xp">0</span>
+</div>
+</div>
+<div class="pets-section">
+<div id="nest-container">
+<div id="nest-empty">
+<button id="buy-egg-btn" class="pet-action-btn nest-buy-btn" data-i18n="pets.buy_egg">🥚 Купить яйцо — 65 💎</button>
+<div class="nest-empty-emoji">🪹</div>
+</div>
+<div id="nest-incubating" class="hidden">
+<div class="nest-scene">
+<div class="nest-base">🪹</div>
+<div class="nest-egg" id="nest-egg-visual">🥚</div>
+</div>
+<div class="nest-timer" id="nest-incubate-timer">30:00</div>
+<div class="nest-bar"><div class="nest-bar-fill" id="nest-incubate-bar"></div></div>
+</div>
+<div id="nest-ready-hatch" class="hidden">
+<div class="nest-scene">
+<div class="nest-base">🪹</div>
+<div class="nest-egg-ready" id="nest-egg-tap-target">🥚</div>
+</div>
+<p class="nest-status-ready" data-i18n="pets.tap_3">👆 Тапни 3 раза!</p>
+<div class="nest-tap-counter">
+<span class="tap-dot" data-idx="1">○</span>
+<span class="tap-dot" data-idx="2">○</span>
+<span class="tap-dot" data-idx="3">○</span>
+</div>
+</div>
+<div id="nest-growing" class="hidden">
+<div class="nest-scene">
+<div class="nest-base">🪹</div>
+<div class="nest-baby" id="nest-baby-visual">🐣</div>
+</div>
+<div class="nest-timer" id="nest-grow-timer">15:00</div>
+<div class="nest-bar"><div class="nest-bar-fill" id="nest-grow-bar"></div></div>
+</div>
+<div id="nest-ready-collect" class="hidden">
+<div class="nest-scene">
+<div class="nest-base">🪹</div>
+<div class="nest-baby-ready" id="nest-collect-tap-target">🐣</div>
+</div>
+<p class="nest-status-ready" data-i18n="pets.tap_collect">👆 Тапни — забери питомца!</p>
+</div>
+</div>
+</div>
+<div class="pets-section" id="storage-section">
+<h3 class="pets-section-title"><span data-i18n="pets.storage">📦 ХРАНИЛИЩЕ</span> (<span id="storage-count">0</span> / 5)</h3>
+<div id="pets-storage-empty" class="pets-empty-msg" data-i18n="pets.empty">Пусто</div>
+<div id="pets-storage-list" class="pets-storage-list"></div>
+</div>
+<div class="pets-section" id="active-pet-section">
+<h3 class="pets-section-title" data-i18n="pets.active_title">⭐ АКТИВНЫЙ ПИТОМЕЦ</h3>
+<div id="active-pet-empty" class="pets-empty-msg" data-i18n="pets.no_active">Нет активного питомца</div>
+<div id="active-pet-card" class="hidden">
+<div class="active-pet-header">
+<div class="active-pet-emoji" id="active-pet-emoji-big">🐹</div>
+<div class="active-pet-info">
+<div class="active-pet-name" id="active-pet-name-big">Хомяк</div>
+<div class="active-pet-rarity" id="active-pet-rarity-big">🟢 Обычный</div>
+<div class="active-pet-bonus" id="active-pet-bonus-big"></div>
+</div>
+</div>
+<div class="active-pet-hunger-block">
+<div class="active-pet-hunger-label">
+<span data-i18n="pets.hunger">🍽️ Голод</span>
+<span id="active-pet-hunger-value">100 / 100</span>
+</div>
+<div class="active-pet-hunger-bar">
+<div class="active-pet-hunger-fill" id="active-pet-hunger-fill-big"></div>
+</div>
+</div>
+<div class="active-pet-feed-row">
+<button class="feed-btn" data-food="strawberry">🍓 <b>(<span id="feed-strawberry-count">0</span>)</b></button>
+<button class="feed-btn" data-food="banana">🍌 <b>(<span id="feed-banana-count">0</span>)</b></button>
+<button class="feed-btn" data-food="orange">🍊 <b>(<span id="feed-orange-count">0</span>)</b></button>
+</div>
+<button id="pet-deactivate-btn" class="pet-deactivate-btn" data-i18n="pets.deactivate">↩️ Убрать в хранилище</button>
+</div>
+</div>
+<div class="pets-section" id="food-shop-section">
+<h3 class="pets-section-title" data-i18n="pets.food_shop_title">🛒 МАГАЗИН ЕДЫ</h3>
+<div class="pets-food-shop">
+<div class="food-card">
+<div class="food-emoji">🍓</div>
+<div class="food-effect" data-i18n="pets.food_hunger_5">+5 голода</div>
+<div class="food-price">5 ⭐</div>
+<button class="food-buy-btn" data-food="strawberry" data-i18n="pets.buy">Купить</button>
+</div>
+<div class="food-card">
+<div class="food-emoji">🍌</div>
+<div class="food-effect" data-i18n="pets.food_hunger_10">+10 голода</div>
+<div class="food-price">10 ⭐</div>
+<button class="food-buy-btn" data-food="banana" data-i18n="pets.buy">Купить</button>
+</div>
+<div class="food-card">
+<div class="food-emoji">🍊</div>
+<div class="food-effect" data-i18n="pets.food_hunger_20">+20 голода</div>
+<div class="food-price">20 ⭐</div>
+<button class="food-buy-btn" data-food="orange" data-i18n="pets.buy">Купить</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="page-nav">
+<button id="page-prev" aria-label="Назад">◀</button>
+<div id="page-dots"><span class="page-dot active" data-page="1"></span><span class="page-dot" data-page="2"></span></div>
+<button id="page-next" aria-label="Вперёд">▶</button>
+</div>
+
+<div id="chest-overlay" class="hidden"><div id="chest-scene"><div id="chest-emoji">🎁</div><div id="chest-shake">🎁</div><div id="chest-rewards"></div><button id="chest-collect" class="chest-collect-btn hidden" data-i18n="chest.collect">✅ Забрать</button></div></div>
+<div id="wheel-overlay" class="hidden"><div id="wheel-scene"><h2 id="wheel-title" data-i18n="wheel.title">🎡 Колесо фортуны</h2><div id="wheel-container"><svg id="wheel-svg" viewBox="0 0 300 300"><g id="wheel-rotor"></g></svg><div id="wheel-pointer">▼</div><div id="wheel-center">🎡</div></div><div id="wheel-result"></div><div id="wheel-controls"><button id="wheel-spin-free" class="wheel-btn-free" data-i18n="wheel.spin_free">🎁 Крутить бесплатно</button><button id="wheel-spin-paid" class="wheel-btn-paid" data-i18n="wheel.spin_paid">💰 Крутить</button></div><p id="wheel-timer" style="color:#aaa;font-size:13px;margin-top:15px"></p><button id="wheel-close" class="wheel-btn-close" data-i18n="common.close">✕ Закрыть</button></div></div>
+<div id="daily-overlay" class="hidden"><div id="daily-scene"><h2 id="daily-title" data-i18n="daily.title">📅 Ежедневная награда</h2><p style="color:#aaa;font-size:13px;margin:5px 0 15px" data-i18n="daily.hint">Крути рулетку раз в день!</p><div id="daily-wheel-container"><svg id="daily-wheel-svg" viewBox="0 0 300 300"><g id="daily-wheel-rotor"></g></svg><div id="daily-wheel-pointer">▼</div><div id="daily-wheel-center">🎁</div></div><div id="daily-result"></div><div id="daily-controls"><button id="daily-spin" class="daily-spin-btn" data-i18n="daily.spin">🎁 Крутить!</button></div><p id="daily-timer" style="color:#aaa;font-size:13px;margin-top:15px"></p><button id="daily-close" class="daily-close-btn" data-i18n="common.close">✕ Закрыть</button></div></div>
+<div id="minigame-overlay" class="hidden"><div id="minigame-scene"><h2 id="minigame-title" data-i18n="minigame.title">⏱️ Мини-игра: 10 секунд</h2><p style="color:#aaa;font-size:13px;margin:5px 0 15px" data-i18n="minigame.hint">Тапни как можно больше раз!</p><div id="minigame-timer">10.0</div><div id="minigame-tap-zone"><button id="minigame-tap-btn" data-i18n="minigame.tap_btn">👆 ТАП!</button></div><div id="minigame-score"><span data-i18n="minigame.taps">Тапов</span>: <b id="minigame-count">0</b></div><div id="minigame-best"><span data-i18n="minigame.best">Рекорд</span>: <b id="minigame-best-val">0</b></div><div id="minigame-result"></div><div id="minigame-controls"><button id="minigame-start" class="minigame-start-btn" data-i18n="minigame.start">▶️ Начать</button></div><p id="minigame-timer-info" style="color:#aaa;font-size:13px;margin-top:15px"></p><button id="minigame-close" class="minigame-close-btn" data-i18n="common.close">✕ Закрыть</button></div></div>
+
+<div id="offline-popup" class="hidden"><div class="offline-box"><h3 data-i18n="offline.title">С возвращением!</h3><p data-i18n="offline.while_away">Пока вас не было:</p><p class="offline-coins"><span id="offline-amount">0</span> <span data-i18n="main.coins">монет</span></p><div id="offline-missed" class="offline-missed hidden"></div><button id="offline-close" data-i18n="offline.collect">Забрать</button></div></div>
+
+<div id="modal-profile" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-profile">✕</button><h2 data-i18n="profile.title">🏅 Профиль</h2><div class="modal-content">
+<div id="profile-banner-display" class="profile-banner-display hidden"></div>
+<p style="text-align:center;color:#ddd" data-i18n="profile.hint">Твой ник. Его нельзя будет изменить.</p>
+<div style="display:flex;gap:8px;margin:15px 0"><input type="text" id="profile-name-input" placeholder="Твой ник" maxlength="15" autocomplete="off" style="flex:1;padding:12px 15px;border-radius:8px;border:1px solid #3a7bd5;background:#0e1a30;color:white;font-size:16px;box-sizing:border-box" data-i18n-ph="profile.nick_ph"><button id="profile-copy-btn" type="button" style="padding:12px 14px;background:#253a5c;border:1px solid #3a7bd5;color:#fff;border-radius:8px;font-size:18px;cursor:pointer;touch-action:manipulation">📋</button></div>
+<button id="profile-save-btn" class="save-btn" type="button" data-i18n="profile.save">✅ Сохранить ник</button>
+<p id="profile-error" style="font-size:13px;color:#ff5252;margin-top:10px;min-height:18px;text-align:center"></p>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<h3 style="color:#ffd54f;font-size:15px;margin:0 0 10px" data-i18n="banner.title">🎨 Баннер профиля</h3>
+<p style="font-size:12px;color:#aaa;margin:0 0 10px" data-i18n="banner.hint">Баннеры получаются за достижения, ивенты и уровни клана.</p>
+<div id="banner-list" class="banner-list"></div>
+</div></div></div>
+
+<div id="tutorial-overlay" class="hidden"><div id="tutorial-content"><div id="tutorial-finger">👆</div><div id="tutorial-text"></div><button id="tutorial-next" data-i18n="tutorial.next">Далее ▶</button><button id="tutorial-skip" data-i18n="tutorial.skip">Пропустить ✕</button></div></div>
+<div id="modal-deposit" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-deposit">✕</button><h2 data-i18n="deposit.title">🏦 Вклад</h2><div class="modal-content" id="deposit-content"></div></div></div>
+<div id="modal-generator" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-generator">✕</button><h2 data-i18n="generator.title">⚡ Генератор кнопки</h2><div class="modal-content" id="generator-content"></div></div></div>
+
+<div id="modal-items" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-items">✕</button><h2 data-i18n="items.title">🛒 Магазин</h2><p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 15px"><span data-i18n="items.shards_label">🌑 Осколков</span>: <span id="items-shards">0</span> | <span data-i18n="items.crystals_label">💎 Кристаллов</span>: <span id="items-crystals">0</span></p><h3 style="color:#d0a0ff;margin:15px 0 10px;font-size:15px" data-i18n="items.items_title">🌑 Предметы за осколки</h3><div id="items-list"></div><hr style="border-color:#3a7bd5;margin:25px 0"><h3 style="color:#4fc3f7;margin:15px 0 10px;font-size:15px" data-i18n="items.crystal_title">💎 Товары за кристаллы</h3><div id="crystal-list"></div></div></div>
+
+<div id="modal-boosters" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-boosters">✕</button><h2 data-i18n="boosters.title">📦 Хранилище бустеров</h2><div id="booster-active-banner" class="booster-active-banner hidden"></div><p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 15px" data-i18n="boosters.hint">Купленные бустеры попадают сюда. Активируй по одному.</p><div id="boosters-list" class="boosters-list"></div></div></div>
+
+<div id="modal-achievements" class="modal hidden">
+<div class="modal-box">
+<button class="modal-close" data-close="modal-achievements">✕</button>
+<h2 data-i18n="ach.title">🏆 Достижения</h2>
+<div id="ach-filters">
+<button class="ach-filter active" data-tier="all" data-i18n="ach.filter_all">Все</button>
+<button class="ach-filter" data-tier="bronze" data-i18n="ach.filter_bronze">🥉 Бронза</button>
+<button class="ach-filter" data-tier="silver" data-i18n="ach.filter_silver">🥈 Серебро</button>
+<button class="ach-filter" data-tier="gold" data-i18n="ach.filter_gold">🥇 Золото</button>
+</div>
+<div id="achievements-list"></div>
+</div>
+</div>
+
+<div id="modal-quests" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-quests">✕</button><h2 data-i18n="quests.title">📜 Задания дня</h2><p id="quests-timer" style="text-align:center;color:#aaa;font-size:13px;margin:0 0 15px">⏰ Загрузка...</p><div id="quests-list"></div></div></div>
+
+<div id="modal-leaders" class="modal hidden">
+<div class="modal-box">
+<button class="modal-close" data-close="modal-leaders">✕</button>
+<h2 data-i18n="leaders.title">🥇 Лидеры</h2>
+<div class="leaders-actions">
+<p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 10px" data-i18n="leaders.submit_hint">Твой ник закреплён за профилем. Отправить рекорд?</p>
+<input type="text" id="leader-name" placeholder="Твой ник" maxlength="15" autocomplete="off" readonly>
+<button id="leader-submit" class="save-btn" type="button" data-i18n="leaders.submit">📤 Отправить рекорд</button>
+</div>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<div id="leaders-list"><p class="leaders-loading">Загрузка...</p></div>
+</div>
+</div>
+
+<div id="modal-skins" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-skins">✕</button><h2 data-i18n="skins.title">🎨 Скины</h2><h3 style="color:#f4d35e;margin:10px 0 8px;font-size:15px" data-i18n="skins.btn_title">🖲️ Кнопка ТАП</h3><p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 10px" data-i18n="skins.btn_hint">Каждый скин — 5 💎</p><div id="skins-list" class="skins-grid"></div><hr style="border-color:#3a7bd5;margin:20px 0"><h3 style="color:#ff5252;margin:10px 0 8px;font-size:15px" data-i18n="skins.emoji_title">❤️ Эмодзи-скины</h3><p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 10px" data-i18n="skins.emoji_hint">По 10 💎. Кнопка превращается в эмодзи</p><div id="emoji-skins-list" class="skins-grid"></div><hr style="border-color:#3a7bd5;margin:20px 0"><h3 style="color:#4fc3f7;margin:10px 0 8px;font-size:15px" data-i18n="skins.bg_title">🖼️ Фон игры</h3><p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 10px" data-i18n="skins.bg_hint">По 25 💎. Тап — вкл/выкл</p><div id="bg-list" class="skins-grid"></div><hr style="border-color:#3a7bd5;margin:20px 0"><h3 style="color:#ff5252;margin:10px 0 8px;font-size:15px" data-i18n="skins.smile_title">🎭 Смайлик вклада</h3><p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 10px" data-i18n="skins.smile_hint">Только через промокод</p><div id="smile-skins-list" class="skins-grid"></div></div></div>
+
+<div id="modal-stats" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-stats">✕</button><h2 data-i18n="stats.title">📊 Статистика</h2><div class="modal-content"><p><span data-i18n="stats.coins_now">Монет сейчас</span>: <b><span id="stat-coins">0</span></b></p><p><span data-i18n="stats.earned">Всего заработано</span>: <b><span id="stat-earned">0</span></b></p><p><span data-i18n="stats.taps">Тапов сделано</span>: <b><span id="stat-taps">0</span></b></p><p><span data-i18n="stats.cps">Монет в секунду</span>: <b><span id="stat-cps">0</span></b></p><p><span data-i18n="stats.per_click">За тап</span>: <b><span id="stat-per-click">0</span></b></p><p><span data-i18n="stats.crystals">Кристаллов</span>: <b><span id="stat-crystals">0</span></b></p><p><span data-i18n="stats.shards">Осколков</span>: <b><span id="stat-shards">0</span></b></p><p><span data-i18n="stats.shards_total">Всего добыто 🌑</span>: <b><span id="stat-shards-total">0</span></b></p><p><span data-i18n="stats.time">Время в игре</span>: <b><span id="stat-time">0</span></b></p><p><span data-i18n="stats.ach">Достижений</span>: <b><span id="stat-ach">0</span> / <span id="stat-ach-total">0</span></b></p><p><span data-i18n="stats.record">🏆 Личный рекорд</span>: <b><span id="stat-record">0</span></b></p><p><span data-i18n="stats.minigame">⏱️ Рекорд мини-игры</span>: <b><span id="stat-minigame">0</span> <span data-i18n="stats.taps_lower">тапов</span></b></p></div></div></div>
+
+<div id="modal-settings" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-settings">✕</button><h2 data-i18n="settings.title">⚙️ Настройки</h2><div class="modal-content">
+<div class="lang-switch-row">
+<span data-i18n="settings.language">🌐 Язык</span>
+<div class="lang-switch">
+<button class="lang-btn" data-lang="ru">🇷🇺 RU</button>
+<button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+</div>
+</div>
+<label class="setting-row"><span data-i18n="settings.float">Показывать +N при тапе</span><input type="checkbox" id="opt-float" checked></label>
+<label class="setting-row"><span data-i18n="settings.golden">Показывать золотую монетку</span><input type="checkbox" id="opt-golden" checked></label>
+<label class="setting-row"><span data-i18n="settings.daily">Ежедневный бонус</span><input type="checkbox" id="opt-daily" checked></label>
+<label class="setting-row"><span data-i18n="settings.sound">Звуки</span><input type="checkbox" id="opt-sound" checked></label>
+<label class="setting-row"><span data-i18n="settings.music">Музыка</span><input type="checkbox" id="opt-music"></label>
+<label class="setting-row"><span data-i18n="settings.low_particles">Меньше частиц</span><input type="checkbox" id="opt-lowparticles"></label>
+<label class="setting-row"><span data-i18n="settings.krohlupic">🐾 Показывать Крохлюпика</span><input type="checkbox" id="opt-krohlupic" checked></label>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<div class="promo-block"><p style="color:#f4d35e;font-size:14px;margin:0 0 8px" data-i18n="settings.promo_title">🎁 Подарочный код</p><input type="text" id="promo-input" placeholder="Введите код..." autocomplete="off" data-i18n-ph="settings.promo_ph"><button id="promo-btn" data-i18n="settings.promo_btn">Активировать</button><p id="promo-result" style="font-size:13px;margin:8px 0 0;min-height:18px"></p></div>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<div class="save-block"><p style="color:#f4d35e;font-size:14px;margin:0 0 8px" data-i18n="settings.save_title">💾 Сохранение прогресса</p><button id="export-btn" class="save-btn" type="button" data-i18n="settings.export">📤 Экспортировать прогресс</button><div id="export-box" class="save-box hidden"><p class="save-hint" data-i18n="settings.export_hint">Скопируйте этот код и сохраните себе.</p><textarea id="export-text" class="save-text" readonly></textarea><div class="save-row"><button id="copy-btn" class="save-small-btn" type="button" data-i18n="settings.copy">📋 Скопировать</button><button id="export-close" class="save-small-btn" type="button" data-i18n="common.close_x">✖ Закрыть</button></div></div><button id="import-btn" class="save-btn" type="button" data-i18n="settings.import">📥 Импортировать прогресс</button><div id="import-box" class="save-box hidden"><p class="save-hint" data-i18n="settings.import_hint">Вставьте код, сохранённый ранее.</p><textarea id="import-text" class="save-text" placeholder="Вставьте сюда код..." data-i18n-ph="settings.import_ph"></textarea><div class="save-row"><button id="import-load" class="save-small-btn" type="button" data-i18n="settings.import_load">📥 Загрузить</button><button id="import-cancel" class="save-small-btn" type="button" data-i18n="common.cancel">✖ Отмена</button></div><p id="import-result" class="save-result"></p></div></div>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<button id="pahan-btn" class="advanced-btn hidden" type="button" style="background:linear-gradient(135deg,#7b1fa2,#e91e63);color:white;border:none;font-weight:bold">🔥 Автокликер от Pahi</button>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<button id="advanced-btn" class="advanced-btn" type="button" data-i18n="settings.advanced">🔧 Дополнительные настройки</button>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<div class="contacts-block"><p class="contacts-title" data-i18n="contacts.title">📞 Связь с разработчиком</p><a href="https://t.me/KrochlupicUp23" target="_blank" rel="noopener" class="contact-link telegram"><span class="contact-icon">💬</span><span class="contact-text"><span class="contact-label" data-i18n="contacts.tg">Телеграм-канал</span><span class="contact-url">t.me/KrochlupicUp23</span></span></a><a href="https://vk.ru/krochlupic_up" target="_blank" rel="noopener" class="contact-link vk"><span class="contact-icon">🌐</span><span class="contact-text"><span class="contact-label" data-i18n="contacts.vk">Канал ВКонтакте</span><span class="contact-url">vk.ru/krochlupic_up</span></span></a><a href="https://t.me/Sup_Krochlupic_Up" target="_blank" rel="noopener" class="contact-link support"><span class="contact-icon">✍️</span><span class="contact-text"><span class="contact-label" data-i18n="contacts.support">Связь с разработчиком</span><span class="contact-url">@Sup_Krochlupic_Up</span></span></a></div>
+<hr style="border-color:#3a7bd5;margin:20px 0">
+<button id="settings-reset" class="danger-btn" type="button" data-i18n="settings.reset">Сбросить весь прогресс</button>
+</div></div></div>
+
+<div id="modal-almanac" class="modal hidden">
+<div class="modal-box almanac-box">
+<button class="modal-close" data-close="modal-almanac">✕</button>
+<h2 data-i18n="almanac.title">📖 Альманах питомцев</h2>
+<p class="almanac-subtitle" data-i18n="almanac.subtitle">Существа, которые могут присоединиться к Krochlupic-Up</p>
+<div id="pet-info-list" class="pet-info-list"></div>
+</div>
+</div>
+
+<div id="modal-friends" class="modal hidden">
+<div class="modal-box">
+<button class="modal-close" data-close="modal-friends">✕</button>
+<h2 data-i18n="friends.title">👥 Друзья</h2>
+<div class="friends-my-id">
+<div class="friends-my-id-label" data-i18n="friends.my_id">Твой ID для шаринга</div>
+<div class="friends-my-id-row">
+<span id="friends-my-id">загрузка...</span>
+<button id="friends-copy-id" title="Копировать">📋</button>
+</div>
+</div>
+<div class="friends-tabs">
+<button class="friends-tab active" data-ftab="list"><span data-i18n="friends.tab_list">👥 Друзья</span> (<span id="friends-count">0</span>)</button>
+<button class="friends-tab" data-ftab="requests"><span data-i18n="friends.tab_requests">✉️ Заявки</span> <span id="friends-req-badge" class="hidden"></span></button>
+<button class="friends-tab" data-ftab="search"><span data-i18n="friends.tab_search">🔍 Найти</span></button>
+<button class="friends-tab" data-ftab="comp">🏁 Соревнования</button>
+<button class="friends-tab" data-ftab="rating">📊 Рейтинг</button>
+<button class="friends-tab" data-ftab="auction">🏪 Аукцион</button>
+</div>
+<div id="friends-pane-list" class="friends-pane">
+<div id="friends-list-empty" class="friends-empty" data-i18n="friends.no_friends">Пока нет друзей. Найди по ID →</div>
+<div id="friends-list"></div>
+</div>
+<div id="friends-pane-requests" class="friends-pane hidden">
+<h4 class="friends-subtitle" data-i18n="friends.incoming">📥 Входящие</h4>
+<div id="friends-incoming-empty" class="friends-empty" data-i18n="friends.no_incoming">Нет входящих заявок</div>
+<div id="friends-incoming-list"></div>
+<h4 class="friends-subtitle" data-i18n="friends.outgoing">📤 Исходящие</h4>
+<div id="friends-outgoing-empty" class="friends-empty" data-i18n="friends.no_outgoing">Нет исходящих заявок</div>
+<div id="friends-outgoing-list"></div>
+</div>
+<div id="friends-pane-search" class="friends-pane hidden">
+<p class="friends-hint" data-i18n="friends.search_hint">Введи ID друга. Пример: <b>Artem#A4K2</b></p>
+<div class="friends-search-row">
+<input type="text" id="friends-search-input" placeholder="Artem#A4K2" maxlength="25" autocomplete="off">
+<button id="friends-search-btn">🔍</button>
+</div>
+<div id="friends-search-result"></div>
+</div>
+<div id="friends-pane-comp" class="friends-pane hidden">
+<div id="comp-main">
+<div class="comp-hero">
+<div class="comp-hero-icon">🏁</div>
+<div class="comp-hero-title">Тапай-баттл</div>
+<div class="comp-hero-sub">Победитель получает +1% своего баланса.<br>Проигравший теряет −1% своего баланса.</div>
+</div>
+<button id="comp-quick-btn" class="comp-btn comp-btn-quick">⚡ Быстрая игра<small>Случайный соперник · 10 сек</small></button>
+<div class="comp-section">
+<div class="comp-section-title">👥 Создать комнату</div>
+<div class="comp-duration-row">
+<button class="comp-dur-btn active" data-dur="10">10 сек</button>
+<button class="comp-dur-btn" data-dur="12">12 сек</button>
+<button class="comp-dur-btn" data-dur="15">15 сек</button>
+</div>
+<button id="comp-create-btn" class="comp-btn comp-btn-create">🎮 Создать комнату</button>
+</div>
+<div class="comp-section">
+<div class="comp-section-title">🔑 Вступить в комнату</div>
+<input type="text" id="comp-code-input" maxlength="6" placeholder="ABCD" autocomplete="off" spellcheck="false">
+<button id="comp-join-btn" class="comp-btn comp-btn-join">🚪 Вступить</button>
+</div>
+</div>
+<div id="comp-waiting" class="hidden">
+<div class="comp-waiting-title">⏳ Ожидание соперника...</div>
+<div class="comp-code-box">
+<div class="comp-code-label">Код комнаты:</div>
+<div class="comp-code-value" id="comp-room-code">----</div>
+<button id="comp-copy-code" class="comp-copy-btn">📋 Скопировать код</button>
+</div>
+<div class="comp-waiting-hint" id="comp-waiting-hint">Отправь код другу</div>
+<button id="comp-cancel-btn" class="comp-btn comp-btn-danger">✖ Отменить</button>
+</div>
+</div>
+<div id="friends-pane-rating" class="friends-pane hidden">
+<p class="friends-hint">Рейтинг среди твоих друзей по «всего заработано»</p>
+<div id="friends-rating-list"></div>
+</div>
+<div id="friends-pane-auction" class="friends-pane hidden">
+<div class="auction-top">
+<button id="auction-my-btn" class="auction-tab-btn active">📦 Мои лоты</button>
+<button id="auction-market-btn" class="auction-tab-btn">🏪 Рынок</button>
+</div>
+<div id="auction-my-pane" class="auction-pane">
+<button id="auction-create-btn" class="comp-btn comp-btn-create">➕ Выставить питомца</button>
+<div id="auction-my-list"></div>
+</div>
+<div id="auction-market-pane" class="auction-pane hidden">
+<div class="auction-filter-row">
+<button class="auction-filter active" data-af="all">Все</button>
+<button class="auction-filter" data-af="common">🟢</button>
+<button class="auction-filter" data-af="rare">🔵</button>
+<button class="auction-filter" data-af="epic">🟣</button>
+</div>
+<div id="auction-market-list"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="modal-clans" class="modal hidden">
+<div class="modal-box clan-box">
+<button class="modal-close" data-close="modal-clans">✕</button>
+<h2>🏰 Кланы</h2>
+<div class="clan-tabs">
+<button class="clan-tab active" data-ctab="my" data-i18n="clan.tab_my">🏰 Мой клан</button>
+<button class="clan-tab" data-ctab="search" data-i18n="clan.tab_search">🔍 Поиск</button>
+<button class="clan-tab" data-ctab="create" data-i18n="clan.tab_create">➕ Создать</button>
+</div>
+<div id="clan-pane-my" class="clan-pane">
+<div id="clan-no-clan">
+<div class="clan-empty-icon">🏰</div>
+<p class="clan-empty-text" data-i18n="clan.no_clan_text">У тебя пока нет клана</p>
+<p class="clan-hint" data-i18n="clan.no_clan_hint">Создай свой за 500 💎 или найди существующий</p>
+<button class="clan-primary-btn" data-ctab-jump="create" data-i18n="clan.btn_create">➕ Создать клан</button>
+<button class="clan-secondary-btn" data-ctab-jump="search" data-i18n="clan.btn_find">🔍 Найти клан</button>
+</div>
+<div id="clan-my-info" class="hidden">
+<div class="clan-header-card">
+<div class="clan-header-row">
+<div class="clan-tag-big" id="clan-my-tag">KRL</div>
+<div class="clan-header-info">
+<div class="clan-name-big" id="clan-my-name">Кровавые Лорды</div>
+<div class="clan-type-label" id="clan-my-type">🔓 Открытый</div>
+</div>
+</div>
+<div class="clan-desc" id="clan-my-desc">Описание клана</div>
+<div class="clan-stats-row">
+<div class="clan-stat"><span class="clan-stat-num" id="clan-my-count">1 / 10</span><span class="clan-stat-label" data-i18n="clan.stat_members">Участников</span></div>
+<div class="clan-stat"><span class="clan-stat-num" id="clan-my-role">👑 Владелец</span><span class="clan-stat-label" data-i18n="clan.stat_role">Твоя роль</span></div>
+</div>
+<div class="clan-level-block">
+<div class="clan-level-row">
+<span class="clan-level-title">⭐ Уровень клана</span>
+<span class="clan-level-value" id="clan-level-value">1 / 5</span>
+</div>
+<div class="clan-level-bar"><div class="clan-level-fill" id="clan-level-fill"></div></div>
+<div class="clan-level-info"><span id="clan-level-invested">0</span> / <span id="clan-level-next">50K</span> монет вложено</div>
+<div class="clan-level-bonus">💎 Бонус клана: <b id="clan-level-bonus">+0%</b> к доходу</div>
+</div>
+</div>
+<div class="clan-invest-block">
+<div class="clan-invest-title">💰 Вложить в клан</div>
+<div class="clan-invest-row">
+<button class="clan-invest-btn" data-invest="1000000">1M</button>
+<button class="clan-invest-btn" data-invest="100000000">100M</button>
+<button class="clan-invest-btn" data-invest="100000000000">100B</button>
+<button class="clan-invest-btn" data-invest="custom">Другое</button>
+</div>
+<div class="clan-invest-hint">Вложенные монеты повышают уровень клана<br>и дают <b>+1% к доходу</b> каждому участнику</div>
+</div>
+<button id="clan-edit-btn" class="clan-secondary-btn hidden" style="margin-top:10px" data-i18n="clan.btn_edit">✏️ Редактировать клан</button>
+<div class="clan-subtabs">
+<button class="clan-subtab active" data-cstab="members" data-i18n="clan.sub_members">👥 Участники</button>
+<button class="clan-subtab" data-cstab="chat" data-i18n="clan.sub_chat">💬 Чат <span id="clan-chat-badge" class="hidden"></span></button>
+<button class="clan-subtab hidden" data-cstab="requests" id="clan-subtab-requests" data-i18n="clan.sub_requests">✉️ Заявки <span id="clan-req-badge"></span></button>
+</div>
+<div id="clan-sub-members" class="clan-subpane">
+<div id="clan-members-list" class="clan-members-list"></div>
+</div>
+<div id="clan-sub-chat" class="clan-subpane hidden">
+<div id="clan-chat-messages" class="clan-chat-messages"></div>
+<div class="clan-chat-input-row">
+<input type="text" id="clan-chat-input" maxlength="200" data-i18n-ph="clan.chat_ph" placeholder="Написать сообщение...">
+<button id="clan-chat-send">📤</button>
+</div>
+<p class="clan-chat-hint" data-i18n="clan.chat_hint">Сообщения видны всем участникам клана</p>
+</div>
+<div id="clan-sub-requests" class="clan-subpane hidden">
+<div id="clan-requests-empty" class="clan-empty-msg" data-i18n="clan.no_requests">Нет заявок</div>
+<div id="clan-requests-list" class="clan-requests-list"></div>
+</div>
+<div class="clan-danger-row">
+<button class="clan-secondary-btn" id="clan-leave-btn" data-i18n="clan.btn_leave">🚪 Выйти из клана</button>
+<button class="clan-danger-btn hidden" id="clan-disband-btn" data-i18n="clan.btn_disband">💀 Распустить клан</button>
+</div>
+</div>
+</div>
+<div id="clan-pane-search" class="clan-pane hidden">
+<div class="clan-search-row">
+<input type="text" id="clan-search-input" maxlength="20" data-i18n-ph="clan.search_ph" placeholder="Название или тег">
+<button id="clan-search-btn">🔍</button>
+</div>
+<div id="clan-search-results">
+<p class="clan-empty-msg" data-i18n="clan.search_hint">Введи название или тег клана</p>
+</div>
+</div>
+<div id="clan-pane-create" class="clan-pane hidden">
+<div id="clan-create-form">
+<div class="clan-field">
+<label data-i18n="clan.field_name">Название клана</label>
+<input type="text" id="clan-create-name" maxlength="20" data-i18n-ph="clan.field_name_ph" placeholder="От 3 до 20 символов">
+</div>
+<div class="clan-field">
+<label data-i18n="clan.field_tag">Тег (2–4 символа, A–Z)</label>
+<input type="text" id="clan-create-tag" maxlength="4" data-i18n-ph="clan.field_tag_ph" placeholder="KRL">
+</div>
+<div class="clan-field">
+<label data-i18n="clan.field_desc">Описание</label>
+<textarea id="clan-create-desc" maxlength="100" rows="3" data-i18n-ph="clan.field_desc_ph" placeholder="Коротко о клане..."></textarea>
+</div>
+<div class="clan-field">
+<label data-i18n="clan.field_type">Тип вступления</label>
+<div class="clan-type-picker">
+<label class="clan-type-option active">
+<input type="radio" name="clan-type" value="open" checked>
+<span class="clan-type-icon">🔓</span>
+<span class="clan-type-text"><b data-i18n="clan.type_open">Открытый</b><small data-i18n="clan.type_open_hint">Вступают сразу</small></span>
+</label>
+<label class="clan-type-option">
+<input type="radio" name="clan-type" value="closed">
+<span class="clan-type-icon">🔒</span>
+<span class="clan-type-text"><b data-i18n="clan.type_closed">Закрытый</b><small data-i18n="clan.type_closed_hint">По заявке</small></span>
+</label>
+</div>
+</div>
+<p class="clan-create-cost" data-i18n="clan.create_cost">Стоимость: 500 💎</p>
+<p id="clan-create-error" class="clan-error"></p>
+<button class="clan-primary-btn" id="clan-create-submit" data-i18n="clan.btn_create_submit">🏗️ Создать клан за 500 💎</button>
+</div>
+</div>
+</div>
+</div>
+
+<div id="modal-admin" class="modal hidden">
+<div class="modal-box admin-box">
+<button class="modal-close" data-close="modal-admin">✕</button>
+<h2 data-i18n="admin.title">👑 Админ-консоль</h2>
+<p class="admin-hint" data-i18n="admin.hint">Команды применяются ко <b>всем игрокам</b> сервера</p>
+<div id="admin-status-block">
+<div class="admin-status-row"><span data-i18n="admin.status_boost">🟢 Онлайн-буст:</span><span id="admin-status-boost">нет</span></div>
+<div class="admin-status-row"><span data-i18n="admin.status_event">🎉 Активный ивент:</span><span id="admin-status-event">нет</span></div>
+</div>
+<div class="admin-input-row">
+<input type="text" id="admin-cmd-input" placeholder="boost 5 30" autocomplete="off" spellcheck="false">
+<button id="admin-cmd-exec">▶</button>
+</div>
+<div class="admin-quick">
+<button class="admin-quick-btn" data-cmd="help">📖 help</button>
+<button class="admin-quick-btn" data-cmd="status">📊 status</button>
+<button class="admin-quick-btn" data-cmd="boost 5 30">⚡ boost 5 30</button>
+<button class="admin-quick-btn" data-cmd="event storm">🌪️ event storm</button>
+</div>
+<p id="admin-cmd-result" class="admin-result"></p>
+<div class="admin-log-title" data-i18n="admin.history">📜 История команд</div>
+<div id="admin-log" class="admin-log"></div>
+</div>
+</div>
+
+<div id="modal-secret" class="modal hidden">
+<div class="modal-box">
+<button class="modal-close" data-close="modal-secret">✕</button>
+<h2 data-i18n="secret.title">⚡ Кликер 67</h2>
+<div class="modal-content">
+<p style="text-align:center;font-size:48px;margin:10px 0">🔥</p>
+<p style="text-align:center;color:#ff5252;font-weight:bold;font-size:16px" data-i18n="secret.subtitle">Секретный автокликер</p>
+<p style="text-align:center;color:#ddd" data-i18n="secret.desc">Делает 67 кликов в секунду автоматически.</p>
+<div id="secret-locked" style="margin-top:20px">
+<p style="text-align:center;color:#aaa;font-size:13px"><span data-i18n="secret.unlock_hint_1">Для разблокировки нужно сделать</span> <b style="color:#f4d35e">6767 <span data-i18n="secret.taps_word">тапов</span></b></p>
+<p style="text-align:center;color:#aaa;font-size:13px"><span data-i18n="secret.your_taps">У вас</span>: <b style="color:#4fc3f7"><span id="secret-taps">0</span></b></p>
+<div style="background:#0e1a30;border-radius:10px;height:20px;margin:15px 0;overflow:hidden"><div id="secret-progress" style="height:100%;width:0%;background:linear-gradient(90deg,#b71c1c,#ff5252);transition:width .3s"></div></div>
+<button id="secret-unlock" class="secret-btn" type="button" data-i18n="secret.unlock_btn">🔒 Разблокировать</button>
+</div>
+<div id="secret-unlocked" style="display:none;margin-top:20px">
+<p style="text-align:center;color:#4caf50;font-weight:bold" data-i18n="secret.unlocked_ok">✅ Автокликер разблокирован!</p>
+<button id="secret-toggle" class="secret-btn secret-on" type="button" data-i18n="secret.activate">🔥 Активировать (67 Qa)</button>
+<p id="secret-status" style="text-align:center;color:#aaa;font-size:13px;margin-top:10px" data-i18n="secret.status_default">Разблокирован. Активация: 67 Qa за 30 минут.</p>
+</div>
+</div>
+</div>
+</div>
+
+<div id="modal-boss" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-boss">✕</button><h2 data-i18n="boss.title">💀 БОСС-СМАЙЛИК</h2><div class="modal-content" style="text-align:center"><div id="boss-emoji" style="font-size:72px;margin:10px 0;cursor:pointer;user-select:none;transition:transform .05s">😈</div><div id="boss-hp-bar" style="background:#0e1a30;border-radius:10px;height:24px;overflow:hidden;margin:15px 0;position:relative"><div id="boss-hp-fill" style="height:100%;width:100%;background:linear-gradient(90deg,#ff0000,#ff5252);transition:width .15s"></div><div id="boss-hp-text" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;color:white">150 / 150</div></div><div id="boss-timer" style="font-size:18px;font-weight:bold;color:#f4d35e;margin:10px 0">⏱ 45.0 с</div><p style="font-size:13px;color:#aaa" data-i18n="boss.hint">Тапай по боссу! Успей за 45 секунд.</p><div id="boss-result" style="font-size:15px;font-weight:bold;margin-top:15px;min-height:20px"></div><button id="boss-start" class="deposit-btn" type="button" style="margin-top:15px" data-i18n="boss.start">🔥 Начать бой</button></div></div></div>
+
+<div id="modal-reward" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-reward">✕</button><h2 data-i18n="reward.title">🏅 Награда</h2><div class="modal-content" style="text-align:center"><p style="font-size:64px;margin:20px 0">👆</p><p style="font-size:18px;color:#f4d35e;font-weight:bold" data-i18n="reward.desc">Вы прокачали Кликер до 228 уровня!</p><p style="font-size:14px;color:#ddd;margin:15px 0" data-i18n="reward.sub">За это полагается особая награда.</p><button id="reward-claim" class="deposit-btn" type="button" style="margin-top:20px" data-i18n="reward.claim">🎁 Забрать награду</button><p id="reward-result" style="font-size:15px;font-weight:bold;margin-top:15px;min-height:20px"></p></div></div></div>
+
+<div id="modal-note" class="modal hidden"><div class="modal-box note-box"><button class="modal-close" data-close="modal-note">✕</button><h2 data-i18n="note.title">📜 Записки</h2><div id="note-list-view"><p style="text-align:center;color:#d4c5a0;font-size:13px;margin-bottom:15px" data-i18n="note.found">Найденные записки</p><div id="note-list"></div></div><div id="note-detail-view" style="display:none"><button id="note-back" class="save-small-btn" type="button" style="margin-bottom:15px" data-i18n="note.back">← Назад к списку</button><div class="note-paper"><p class="note-text" id="note-detail-text"></p><p class="note-sign" id="note-detail-sign"></p></div></div></div></div>
+
+<div id="alarm-overlay" class="hidden"><div id="alarm-sign">⚠️</div><p id="alarm-text" data-i18n="alarm.text">Ты давно не тапал!<br>Нажми на знак 5 раз</p><p id="alarm-counter">0 / 5</p></div>
+
+<div id="modal-help" class="modal hidden">
+<div class="modal-box">
+<button class="modal-close" data-close="modal-help">✕</button>
+<h2 data-i18n="help.title">❓ Как играть</h2>
+<div class="modal-content">
+<p data-i18n="help.1"><b>1.</b> Тапайте по большой кнопке — получаете монеты.</p>
+<p data-i18n="help.2"><b>2.</b> Покупайте улучшения в магазине.</p>
+<p data-i18n="help.3"><b>3.</b> Золотая монетка даёт x7 на 30 секунд.</p>
+<p data-i18n="help.4"><b>4.</b> За достижения даются 💎 (🥉=1, 🥈=3, 🥇=5).</p>
+<p data-i18n="help.5"><b>5.</b> Сундук раз в час — кристаллы, монеты, осколки, бустеры.</p>
+<p data-i18n="help.6"><b>6.</b> Оффлайн-доход до 8 часов.</p>
+<p data-i18n="help.7"><b>7.</b> Скины кнопки за 5 💎, эмодзи за 10 💎, фоны за 25 💎.</p>
+<p data-i18n="help.8"><b>8.</b> Предметы за 🌑 — 3 уровня.</p>
+<p data-i18n="help.9"><b>9.</b> Вклад — смайлик, каждые 30 минут падает уровень.</p>
+<p data-i18n="help.10"><b>10.</b> Генератор — прокачивает скорость тапов.</p>
+<p data-i18n="help.11"><b>11.</b> Лидерборд — рейтинг по «Всего заработано».</p>
+<p data-i18n="help.12"><b>12.</b> Задания обновляются в 6:00.</p>
+<p data-i18n="help.13"><b>13.</b> 🐾 Питомцы — покупай яйца, корми, получай бонусы.</p>
+<p data-i18n="help.14"><b>14.</b> Активный питомец должен быть сыт, иначе погибнет!</p>
+<p data-i18n="help.15"><b>15.</b> 🌪️ Кровавый Шторм — каждый понедельник 9:00!</p>
+<p data-i18n="help.16"><b>16.</b> 👥 Друзья — шарь свой ID, добавляй в друзья, следи за онлайном!</p>
+<p data-i18n="help.17"><b>17.</b> 🏰 Кланы — создай свой за 500 💎 или вступи в существующий!</p>
+<p data-i18n="help.18"><b>18.</b> 🥊 FNF-битва — тапай стрелки в такт музыке!</p>
+</div>
+</div>
+</div>
+
+<div id="fnf-overlay" class="hidden">
+<div id="fnf-scene">
+<div id="fnf-header">
+<div id="fnf-title" data-i18n="fnf.title">🥊 БИТВА С КРОХЛЮПИКОМ</div>
+<div id="fnf-hp-row"><span data-i18n="fnf.hp">❤️ Жизни</span>: <span id="fnf-hp">50 / 50</span></div>
+<div id="fnf-stats-row">
+<span>🎵 <span id="fnf-score">0</span></span>
+<span>🔥 <span id="fnf-combo">0</span>×</span>
+<span>❌ <span id="fnf-miss">0</span></span>
+</div>
+</div>
+<div id="fnf-arena">
+<canvas id="fnf-canvas"></canvas>
+<div id="fnf-zone"></div>
+</div>
+<div id="fnf-controls">
+<button class="fnf-arrow-btn" data-fnf-dir="left">◀</button>
+<button class="fnf-arrow-btn" data-fnf-dir="up">▲</button>
+<button class="fnf-arrow-btn" data-fnf-dir="down">▼</button>
+<button class="fnf-arrow-btn" data-fnf-dir="right">▶</button>
+</div>
+<div id="fnf-timer-row">
+<span id="fnf-time-left">90.0</span> <span data-i18n="fnf.seconds_left">сек</span>
+</div>
+<div id="fnf-start-block">
+<button id="fnf-start-btn" data-i18n="fnf.start">▶️ Начать битву</button>
+<p id="fnf-start-hint" data-i18n="fnf.start_hint">Стрелки летят вниз — тапай их в такт!</p>
+<p id="fnf-cooldown" class="fnf-cooldown"></p>
+</div>
+<div id="fnf-result" class="hidden">
+<h2 id="fnf-result-title"></h2>
+<p id="fnf-result-text"></p>
+<button id="fnf-result-close" data-i18n="common.close">✕ Закрыть</button>
+</div>
+<button id="fnf-close" class="fnf-close-btn" data-i18n="common.close">✕ Закрыть</button>
+</div>
+</div>
+
+<div id="modal-language" class="modal hidden">
+<div class="modal-box lang-choice-box">
+<h2>🌐 Select language / Выбери язык</h2>
+<p class="lang-choice-hint">Choose your language · Выберите язык игры</p>
+<div class="lang-choice-grid">
+<button class="lang-choice-btn" data-choose-lang="ru">
+<span class="lang-choice-flag">🇷🇺</span>
+<span class="lang-choice-name">Русский</span>
+</button>
+<button class="lang-choice-btn" data-choose-lang="en">
+<span class="lang-choice-flag">🇬🇧</span>
+<span class="lang-choice-name">English</span>
+</button>
+</div>
+</div>
+</div>
+
+<div id="modal-dm" class="modal hidden">
+<div class="modal-box dm-box">
+<button class="modal-close" data-close="modal-dm">✕</button>
+<div class="dm-header">
+<div class="dm-avatar" id="dm-avatar">🙂</div>
+<div class="dm-info">
+<div class="dm-name" id="dm-name">Друг</div>
+<div class="dm-status" id="dm-status">загрузка...</div>
+<div class="dm-typing" id="dm-typing"></div>
+</div>
+</div>
+<div id="dm-messages" class="dm-messages"></div>
+<div class="dm-input-row">
+<input type="text" id="dm-input" maxlength="120" placeholder="Написать сообщение..." autocomplete="off" spellcheck="false">
+<span class="dm-counter" id="dm-counter">0/120</span>
+<button id="dm-send">📤</button>
+</div>
+<button id="dm-clear-btn" class="dm-clear-btn">🗑 Очистить историю</button>
+<div class="dm-hint">Сообщения хранятся последние 100 штук</div>
+</div>
+</div>
+
+<div id="modal-competition" class="modal hidden">
+<div class="comp-arena-box">
+<div class="comp-arena-header">
+<div class="comp-player comp-player-left">
+<div class="comp-player-avatar" id="comp-me-avatar">🙂</div>
+<div class="comp-player-name" id="comp-me-name">Я</div>
+<div class="comp-player-taps" id="comp-me-taps">0</div>
+</div>
+<div class="comp-vs-middle">
+<div class="comp-vs-text">VS</div>
+<div class="comp-timer-big" id="comp-timer">10.0</div>
+</div>
+<div class="comp-player comp-player-right">
+<div class="comp-player-avatar" id="comp-opp-avatar">❓</div>
+<div class="comp-player-name" id="comp-opp-name">???</div>
+<div class="comp-player-taps" id="comp-opp-taps">0</div>
+</div>
+</div>
+<div class="comp-countdown hidden" id="comp-countdown">
+<div class="comp-countdown-num" id="comp-countdown-num">3</div>
+</div>
+<div class="comp-tap-zone">
+<button id="comp-tap-btn" class="comp-tap-btn" disabled>👆 ТАП</button>
+</div>
+<div class="comp-result hidden" id="comp-result">
+<div class="comp-result-title" id="comp-result-title"></div>
+<div class="comp-result-text" id="comp-result-text"></div>
+<button id="comp-result-close" class="comp-btn">Закрыть</button>
+</div>
+<button id="comp-leave-btn" class="comp-leave-btn">✖ Выйти</button>
+</div>
+</div>
+
+<div id="modal-auction-create" class="modal hidden">
+<div class="modal-box">
+<button class="modal-close" data-close="modal-auction-create">✕</button>
+<h2>🏪 Выставить на аукцион</h2>
+<div class="modal-content">
+<p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 12px">Выбери питомца из хранилища и назначь цену в монетах.</p>
+<div id="auction-pet-picker" class="auction-pet-picker"></div>
+<div class="auction-price-block">
+<label style="color:#ffd54f;font-size:13px;font-weight:bold">💰 Цена</label>
+<div class="auction-price-row">
+<input type="number" id="auction-price-input" min="1" placeholder="0" autocomplete="off">
+<select id="auction-price-unit">
+<option value="1">монет</option>
+<option value="1000">K</option>
+<option value="1000000">M</option>
+<option value="1000000000">B</option>
+<option value="1000000000000">T</option>
+<option value="1000000000000000">Qa</option>
+</select>
+</div>
+<p class="auction-hint">Комиссия аукциона: <b>5%</b> от продажи</p>
+</div>
+<p id="auction-create-error" class="clan-error"></p>
+<button class="clan-primary-btn" id="auction-create-submit">📤 Выставить лот</button>
+<button class="clan-secondary-btn" id="auction-create-cancel">✖ Отмена</button>
+</div>
+</div>
+</div>
+
+<div id="modal-clan-edit" class="modal hidden">
+<div class="modal-box">
+<button class="modal-close" data-close="modal-clan-edit">✕</button>
+<h2 data-i18n="clan.edit_title">✏️ Редактировать клан</h2>
+<div class="modal-content">
+<div class="clan-field">
+<label data-i18n="clan.field_name">Название клана</label>
+<input type="text" id="clan-edit-name" maxlength="20" data-i18n-ph="clan.field_name_ph" placeholder="От 3 до 20 символов">
+</div>
+<div class="clan-field">
+<label data-i18n="clan.field_desc">Описание</label>
+<textarea id="clan-edit-desc" maxlength="100" rows="3" data-i18n-ph="clan.field_desc_ph" placeholder="Коротко о клане..."></textarea>
+</div>
+<div class="clan-field">
+<label data-i18n="clan.field_type">Тип вступления</label>
+<div class="clan-type-picker">
+<label class="clan-type-option" id="clan-edit-type-open">
+<input type="radio" name="clan-edit-type" value="open">
+<span class="clan-type-icon">🔓</span>
+<span class="clan-type-text"><b data-i18n="clan.type_open">Открытый</b><small data-i18n="clan.type_open_hint">Вступают сразу</small></span>
+</label>
+<label class="clan-type-option" id="clan-edit-type-closed">
+<input type="radio" name="clan-edit-type" value="closed">
+<span class="clan-type-icon">🔒</span>
+<span class="clan-type-text"><b data-i18n="clan.type_closed">Закрытый</b><small data-i18n="clan.type_closed_hint">По заявке</small></span>
+</label>
+</div>
+</div>
+<p id="clan-edit-error" class="clan-error"></p>
+<button class="clan-primary-btn" id="clan-edit-save" data-i18n="clan.edit_save">💾 Сохранить изменения</button>
+<button class="clan-secondary-btn" id="clan-edit-cancel" data-i18n="common.cancel">✖ Отмена</button>
+</div>
+</div>
+</div>
+
+<div id="subscribe-banner" class="hidden">
+<div class="subscribe-banner-box">
+<div class="subscribe-banner-emoji">📢</div>
+<div class="subscribe-banner-title">Подпишись на наши каналы!</div>
+<div class="subscribe-banner-sub">Там много полезного: новости, обновления, ивенты</div>
+<div class="subscribe-links">
+<a href="https://t.me/KrochlupicUp23" target="_blank" rel="noopener" class="subscribe-link telegram">
+<span class="subscribe-link-icon">💬</span>
+<span class="subscribe-link-text">
+<span class="subscribe-link-label">Телеграм-канал</span>
+<span class="subscribe-link-url">t.me/KrochlupicUp23</span>
+</span>
+</a>
+<a href="https://vk.ru/krochlupic_up" target="_blank" rel="noopener" class="subscribe-link vk">
+<span class="subscribe-link-icon">🌐</span>
+<span class="subscribe-link-text">
+<span class="subscribe-link-label">Канал ВКонтакте</span>
+<span class="subscribe-link-url">vk.ru/krochlupic_up</span>
+</span>
+</a>
+</div>
+<button id="subscribe-banner-close" class="subscribe-close-btn">✅ Понятно</button>
+</div>
+</div>
+
+<div id="super-event-banner" class="hidden"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="lang.js"></script>
+<script src="game.js"></script>
+</body>
+  </html>
