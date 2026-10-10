@@ -2735,7 +2735,7 @@ setTimeout(function(){subscribeBannerInit();},3000);
 setTimeout(function(){khrPetInit();},5500);
 setTimeout(function(){if(typeof processIncomingGifts==="function")processIncomingGifts();},2500);
 (function(){var fr=document.getElementById("activity-row-3");if(fr)fr.style.display="none";var nc=0,nt=null;function h(){nc++;if(nt)clearTimeout(nt);nt=setTimeout(function(){nc=0;},2000);if(nc>=5){nc=0;if(nt)clearTimeout(nt);setTimeout(function(){try{playSound("achievement");vibrate(40);}catch(e){}if(typeof fnfOpen==="function")fnfOpen();},200);}}var p=document.getElementById("page-prev"),n=document.getElementById("page-next");if(p)p.addEventListener("click",h);if(n)n.addEventListener("click",h);})();
-// SW отключён для отладки v115
+// SW убран v122
 // ===== ФИКС v222 — подтягивание ников в чате клана =====
 (function(){
   var _origClanRenderChat=window.clanRenderChat;
