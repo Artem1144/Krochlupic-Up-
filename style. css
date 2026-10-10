@@ -1134,4 +1134,11 @@ animation-duration:.01ms!important;
 animation-iteration-count:1!important;
 transition-duration:.01ms!important
 }
-}
+                        }
+#fnf-overlay{position:fixed;top:0;left:0;right:0;height:100dvh;max-height:100dvh;display:none;flex-direction:column;z-index:9999;background:rgba(0,0,0,.9)}
+@supports not (height:100dvh){#fnf-overlay{height:100vh;max-height:100vh}}
+#fnf-scene{flex:1;position:relative;overflow:hidden}
+#fnf-zone{position:absolute;top:0;left:0;right:0;bottom:130px;overflow:hidden}
+#fnf-controls{height:130px;display:flex;justify-content:space-around;align-items:center;padding:8px 8px 20px;background:rgba(0,0,0,.6)}
+#fnf-controls button{font-size:32px;padding:12px 20px;border-radius:12px;background:#222;color:#fff;border:2px solid #555}
+#fnf-close{position:absolute;top:10px;right:10px;z-index:10;padding:8px 14px;border-radius:10px;background:#c33;color:#fff;border:none}
