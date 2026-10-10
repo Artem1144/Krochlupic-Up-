@@ -2848,7 +2848,7 @@ setTimeout(function(){if(typeof processIncomingGifts==="function")processIncomin
       var t = b.dataset.ctabJump;
       document.querySelectorAll(".clan-tab").forEach(function(x){ x.classList.toggle("active", x.dataset.ctab === t); });
       document.querySelectorAll(".clan-pane").forEach(function(p){ p.classList.add("hidden"); });
-      var pv = document.g(etElementById("clan-pane-" + t);
+      var pv = document.getElementById("clan-pane-" + t);
       if(pv) pv.classList.remove("hidden");
     };
   });
