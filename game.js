@@ -3045,3 +3045,18 @@ setTimeout(function(){if(typeof processIncomingGifts==="function")processIncomin
 
   console.log("[MODULES v300] Друзья + Клан загружены");
 })();
+// ТЕСТ v303
+setTimeout(function(){
+  var ft = document.querySelectorAll(".friends-tab").length;
+  var ct = document.querySelectorAll(".clan-tab").length;
+  var mc = !!document.getElementById("modal-clans");
+  var mf = !!document.getElementById("modal-friends");
+  var btn = !!document.getElementById("clan-side-btn");
+  alert(
+    "Друзья вкладки: " + ft + "\n" +
+    "Клан вкладки: " + ct + "\n" +
+    "modal-clans: " + mc + "\n" +
+    "modal-friends: " + mf + "\n" +
+    "Кнопка 🏰: " + btn
+  );
+}, 3500);
