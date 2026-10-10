@@ -2887,3 +2887,31 @@ setInterval(function(){
     }).catch(function(){});
   });
 },15000);
+// ===== ОБРАБОТЧИКИ БОКОВЫХ КНОПОК =====
+(function(){
+  function bind(id, fn){
+    var el = document.getElementById(id);
+    if(el && !el.__bound){ el.__bound = true; el.onclick = fn; }
+  }
+  bind("clan-side-btn", function(e){
+    e.preventDefault();
+    if(typeof playSound === "function") playSound("ui");
+    var m = document.getElementById("modal-clans");
+    if(m){ m.classList.remove("hidden"); if(typeof syncScrollLock === "function") syncScrollLock(); }
+    if(typeof clanSetupUI === "function") clanSetupUI();
+    if(typeof clanLoadMy === "function") clanLoadMy();
+  });
+  bind("dm-side-btn", function(e){
+    e.preventDefault();
+    if(typeof playSound === "function") playSound("ui");
+    if(typeof dmOpenLast === "function"){ dmOpenLast(); return; }
+    var m = document.getElementById("modal-dm");
+    if(m){ m.classList.remove("hidden"); if(typeof syncScrollLock === "function") syncScrollLock(); }
+  });
+  bind("almanac-btn", function(e){
+    e.preventDefault();
+    var m = document.getElementById("modal-almanac");
+    if(m){ m.classList.remove("hidden"); if(typeof syncScrollLock === "function") syncScrollLock(); }
+  });
+  console.log("[bind] side buttons ready");
+})();
