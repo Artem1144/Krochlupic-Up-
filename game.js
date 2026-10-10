@@ -3402,3 +3402,16 @@ function dmSend(text) {
   };
   alert("ТЕСТ: обработчик привязан");
 })();
+// ===== ТЕСТ v124 =====
+(function(){
+  var b = document.getElementById("clan-side-btn");
+  if(!b){ alert("Нет кнопки 🏰"); return; }
+  b.onclick = function(e){
+    e.preventDefault();
+    var m = document.getElementById("modal-clans");
+    if(!m){ alert("Нет modal-clans в HTML"); return; }
+    alert("Найден modal-clans. Классы: " + m.className);
+    m.classList.remove("hidden");
+    alert("После удаления hidden. Классы: " + m.className);
+  };
+})();
