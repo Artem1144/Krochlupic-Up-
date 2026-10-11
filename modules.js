@@ -22,22 +22,22 @@
   }); }
 
   function openClan(){
-    alert("1. openClan");
+  
     show("modal-clans");
-    alert("2. модалка открыта");
+    
     refreshClan();
   }
 
   function refreshClan(){
-    alert("3. refreshClan");
+    
     var d=fb(), me=myId();
-    alert("4. uid=" + me + " db=" + (d ? "есть" : "нет"));
+    
     if(!d || !me) return;
     var noClan=byId("clan-no-clan");
     var myInfo=byId("clan-my-info");
     d.ref("users/"+me+"/clanId").once("value").then(function(s){
       var cid=s.val();
-      alert("5. clanId=" + cid);
+      
       if(!cid){
         if(noClan) noClan.classList.remove("hidden");
         if(myInfo) myInfo.classList.add("hidden");
@@ -47,7 +47,7 @@
       if(myInfo) myInfo.classList.remove("hidden");
       d.ref("clans/"+cid).once("value").then(function(cs){
         var c=cs.val()||{};
-        alert("6. клан=" + (c.name || "?") + " tag=" + (c.tag || "?"));
+        
         var set=function(id,v){ var e=byId(id); if(e) e.textContent=v; };
         set("clan-my-tag", c.tag||"?");
         set("clan-my-name", c.name||"—");
