@@ -93,7 +93,54 @@
       });
     });
   }
+// ==== ЧАТ КЛАНА: ОТПРАВКА ====
+function sendChat(){
+  var inp=byId("clan-chat-input");
+  if(!inp) return;
+  var txt=inp.value.trim();
+  if(!txt) return;
+  var d=fb(), me=myId();
+  if(!d || !me) return;
+  d.ref("users/"+me+"/clanId").once("value").then(function(s){
+    var cid=s.val();
+    if(!cid){ alert("Ты не в клане"); return; }
+    d.ref("clans/"+cid+"/chat").push().set({
+      author: myNick(),
+      authorId: me,
+      text: txt,
+      ts: Date.now()
+    }).then(function(){
+      inp.value="";
+    }).catch(function(e){ alert("Ошибка: "+e.message); });
+  });
+}
 
+// ==== ВКЛАД В КЛАН ====
+function investClan(amount){
+  var d=fb(), me=myId();
+  if(!d || !me) return;
+  if(typeof coins === "undefined") return;
+  if(amount <= 0){ return; }
+  if(amount === "custom"){
+    var v=prompt("Сколько монет вложить?");
+    if(!v) return;
+    amount = parseInt(v,10);
+    if(!amount || amount<=0) return;
+  }
+  if(coins < amount){ alert("Недостаточно монет: "+amount); return; }
+  d.ref("users/"+me+"/clanId").once("value").then(function(s){
+    var cid=s.val();
+    if(!cid){ alert("Ты не в клане"); return; }
+    d.ref("clans/"+cid+"/invested").transaction(function(cur){
+      return (cur || 0) + amount;
+    }).then(function(){
+      coins -= amount;
+      if(typeof updateUI === "function") try{ updateUI(); }catch(e){}
+      if(typeof saveGame === "function") try{ saveGame(); }catch(e){}
+      alert("✅ Вложено " + amount + " монет");
+    });
+  });
+}
   function bind(){
     var cb=byId("clan-side-btn");
     if(cb) cb.onclick=function(e){ e.preventDefault(); openClan(); };
@@ -123,7 +170,19 @@
         if(pv) pv.classList.remove("hidden");
       };
     });
+var chS=byId("clan-chat-send");
+if(chS) chS.onclick=sendChat;
 
+var chIn=byId("clan-chat-input");
+if(chIn) chIn.onkeydown=function(e){ if(e.key==="Enter") sendChat(); };
+
+document.querySelectorAll(".clan-invest-btn").forEach(function(b){
+  b.onclick=function(){
+    var v=b.dataset.invest;
+    if(v === "custom") investClan("custom");
+    else investClan(parseInt(v,10) || 0);
+  };
+});
     console.log("[modules v1] bind OK");
   }
 
