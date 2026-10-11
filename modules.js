@@ -831,3 +831,288 @@
     document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 1500); });
   } else { setTimeout(bind, 1500); }
 })();
+/* ==== Krochlupic FNF v1 ==== */
+(function(){
+  "use strict";
+  function byId(id){ return document.getElementById(id); }
+  function fb(){ if(typeof db!=="undefined"&&db) return db; if(typeof firebase!=="undefined"&&firebase.database) return firebase.database(); return null; }
+  function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
+
+  // Настройки игры
+  var BPM = 120;             // скорость музыки
+  var BEATS_PER_ARROW = 1;   // через сколько бит летит стрелка
+  var FALL_TIME = 1.8;       // сколько секунд стрелка летит до линии (сек)
+  var DURATION = 60;         // длительность битвы (сек)
+  var HIT_WINDOW = 0.18;     // окно попадания (сек) — чем меньше, тем строже
+  var MAX_HP = 50;
+  var DIRS = ["left","up","down","right"];
+  var SYM = { left:"◀", up:"▲", down:"▼", right:"▶" };
+
+  // Состояние
+  var running = false;
+  var hp = MAX_HP;
+  var score = 0;
+  var combo = 0;
+  var maxCombo = 0;
+  var misses = 0;
+  var timeLeft = 0;
+  var arrows = [];           // {dir, spawnAt, hitY}
+  var rafId = null;
+  var lastTick = 0;
+  var nextSpawnAt = 0;
+  var lastPlayedAt = 0;
+  var COOLDOWN_MS = 5*60*1000;
+  var LANE_X = { left:0.12, up:0.37, down:0.62, right:0.87 };
+  var HIT_LINE_Y = 0.78;
+
+  function cf(){
+    try{ return JSON.parse(localStorage.getItem("clicker-settings")||"{}"); }catch(e){ return {}; }
+  }
+
+  function canPlay(){
+    var last=parseInt(localStorage.getItem("fnfLastPlayed")||"0",10);
+    return Date.now() - last >= COOLDOWN_MS;
+  }
+  function cooldownLeft(){
+    var last=parseInt(localStorage.getItem("fnfLastPlayed")||"0",10);
+    var left=COOLDOWN_MS - (Date.now()-last);
+    return left>0 ? left : 0;
+  }
+  function updateCooldownUI(){
+    var el=byId("fnf-cooldown"); if(!el) return;
+    if(canPlay()){ el.textContent=""; return; }
+    var s=Math.ceil(cooldownLeft()/1000);
+    var m=Math.floor(s/60); s=s%60;
+    el.textContent="⏳ Следующая битва через "+m+":"+(s<10?"0":"")+s;
+  }
+
+  function openFnf(){
+    var ov=byId("fnf-overlay"); if(!ov) return;
+    ov.classList.remove("hidden");
+    if(typeof syncScrollLock==="function") try{ syncScrollLock(); }catch(e){}
+    resetUI();
+    updateCooldownUI();
+    var sb=byId("fnf-start-block"); if(sb) sb.classList.remove("hidden");
+    var r=byId("fnf-result"); if(r) r.classList.add("hidden");
+    var btn=byId("fnf-start-btn"); if(btn) btn.disabled=!canPlay();
+  }
+
+  function closeFnf(){
+    if(running) stop(false);
+    var ov=byId("fnf-overlay"); if(ov) ov.classList.add("hidden");
+    if(typeof syncScrollLock==="function") try{ syncScrollLock(); }catch(e){}
+  }
+
+  function resetUI(){
+    hp=MAX_HP; score=0; combo=0; maxCombo=0; misses=0; arrows=[];
+    var h=byId("fnf-hp"); if(h) h.textContent=hp+" / "+MAX_HP;
+    var s=byId("fnf-score"); if(s) s.textContent="0";
+    var c=byId("fnf-combo"); if(c) c.textContent="0×";
+    var m=byId("fnf-miss"); if(m) m.textContent="0";
+    var t=byId("fnf-time-left"); if(t) t.textContent=DURATION.toFixed(1);
+    var z=byId("fnf-zone"); if(z) z.innerHTML="";
+  }
+
+  function startFnf(){
+    if(!canPlay()){ alert("Слишком рано"); return; }
+    running=true;
+    resetUI();
+    lastPlayedAt=Date.now();
+    try{ localStorage.setItem("fnfLastPlayed", lastPlayedAt.toString()); }catch(e){}
+    timeLeft=DURATION;
+    lastTick=performance.now();
+    nextSpawnAt=lastTick+800;
+    var sb=byId("fnf-start-block"); if(sb) sb.classList.add("hidden");
+    var r=byId("fnf-result"); if(r) r.classList.add("hidden");
+    var btn=byId("fnf-start-btn"); if(btn) btn.disabled=true;
+    if(typeof playSound==="function") try{ playSound("ui"); }catch(e){}
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId=requestAnimationFrame(tick);
+  }
+
+  function stop(showResult){
+    running=false;
+    if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    var z=byId("fnf-zone"); if(z) z.innerHTML="";
+    if(showResult) showResultScreen();
+    var sb=byId("fnf-start-block"); if(sb) sb.classList.remove("hidden");
+    var btn=byId("fnf-start-btn"); if(btn) btn.disabled=!canPlay();
+    updateCooldownUI();
+  }
+
+  function tick(now){
+    if(!running) return;
+    var dt=(now-lastTick)/1000;
+    lastTick=now;
+    timeLeft-=dt;
+    if(timeLeft<=0){ timeLeft=0; updateHUD(); stop(true); return; }
+
+    // Спавн стрелок
+    var beatMs = 60000 / BPM * BEATS_PER_ARROW;
+    if(now >= nextSpawnAt){
+      var dir = DIRS[Math.floor(Math.random()*4)];
+      arrows.push({ dir:dir, spawnAt:now });
+      nextSpawnAt = now + beatMs;
+    }
+
+    // Проверяем промахи (стрелка улетела ниже)
+    var fallMs = FALL_TIME * 1000;
+    var toKeep = [];
+    for(var i=0;i<arrows.length;i++){
+      var a=arrows[i];
+      var age = now - a.spawnAt;
+      if(age > fallMs + HIT_WINDOW*1000){
+        // промах
+        misses++;
+        combo=0;
+        hp--;
+        if(typeof playSound==="function") try{ playSound("ui"); }catch(e){}
+        if(hp<=0){ updateHUD(); lose(); return; }
+      } else {
+        toKeep.push(a);
+      }
+    }
+    arrows=toKeep;
+
+    drawArrows(now);
+    updateHUD();
+    rafId=requestAnimationFrame(tick);
+  }
+
+  function drawArrows(now){
+    var zone=byId("fnf-zone"); if(!zone) return;
+    var fallMs = FALL_TIME*1000;
+    var W = zone.clientWidth || 300;
+    var H = zone.clientHeight || 400;
+    var html="";
+    for(var i=0;i<arrows.length;i++){
+      var a=arrows[i];
+      var age = now - a.spawnAt;
+      var pct = age / fallMs;
+      var top = pct * HIT_LINE_Y * 100;
+      var left = (LANE_X[a.dir]*100);
+      var col = "#c9a0ff";
+      html += '<div style="position:absolute;left:'+left+'%;top:'+top+'%;transform:translate(-50%,-50%);font-size:36px;color:'+col+';text-shadow:0 0 12px rgba(201,160,255,.9);pointer-events:none">'+SYM[a.dir]+'</div>';
+    }
+    zone.innerHTML=html;
+  }
+
+  function updateHUD(){
+    var h=byId("fnf-hp"); if(h) h.textContent=Math.max(0,hp)+" / "+MAX_HP;
+    var s=byId("fnf-score"); if(s) s.textContent=score;
+    var c=byId("fnf-combo"); if(c) c.textContent=combo+"×";
+    var m=byId("fnf-miss"); if(m) m.textContent=misses;
+    var t=byId("fnf-time-left"); if(t) t.textContent=timeLeft.toFixed(1);
+  }
+
+  function pressLane(dir){
+    if(!running) return;
+    var now = performance.now();
+    var fallMs = FALL_TIME*1000;
+    var best=null, bestD=9999;
+    for(var i=0;i<arrows.length;i++){
+      var a=arrows[i];
+      if(a.dir!==dir) continue;
+      var age = now - a.spawnAt;
+      var d = Math.abs(age - fallMs);
+      if(d < bestD){ bestD=d; best=a; }
+    }
+    var el = document.querySelector('.fnf-arrow-btn[data-fnf-dir="'+dir+'"]');
+    if(best && bestD <= HIT_WINDOW*1000){
+      // попадание
+      arrows = arrows.filter(function(x){ return x!==best; });
+      combo++; if(combo>maxCombo) maxCombo=combo;
+      var pts = 10 + Math.min(30, combo*2);
+      score += pts;
+      if(el){ el.classList.add("hit"); setTimeout(function(){ el.classList.remove("hit"); }, 120); }
+      if(typeof vibrate==="function") try{ vibrate(10); }catch(e){}
+      if(typeof playSound==="function") try{ playSound("click"); }catch(e){}
+    } else {
+      // промах по нажатию
+      combo=0;
+      hp--;
+      if(el){ el.classList.add("miss"); setTimeout(function(){ el.classList.remove("miss"); }, 150); }
+      if(typeof playSound==="function") try{ playSound("ui"); }catch(e){}
+      if(hp<=0){ updateHUD(); lose(); return; }
+    }
+    updateHUD();
+  }
+
+  function win(){
+    running=false;
+    if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    var d=fb();
+    var rewards=[];
+    var rw_coins = Math.max(500, Math.floor(score*50));
+    rewards.push("🪙 +"+fmt(rw_coins)+" монет");
+    if(typeof coins!=="undefined"){ coins+=rw_coins; if(typeof totalEarned!=="undefined") totalEarned+=rw_coins; }
+    var rw_gems = Math.min(20, Math.floor(score/40));
+    if(rw_gems>0){ if(typeof addCrystals==="function") try{ addCrystals(rw_gems); }catch(e){}
+      rewards.push("💎 +"+rw_gems+" кристаллов"); }
+    var rw_shards = Math.min(15, Math.floor(maxCombo/3));
+    if(rw_shards>0){ if(typeof shards!=="undefined") shards+=rw_shards;
+      rewards.push("🌑 +"+rw_shards+" осколков"); }
+    if(misses===0 && typeof unlocked!=="undefined"){
+      unlocked._fnfPerfect=true;
+    }
+    if(typeof updateUI==="function") try{ updateUI(); }catch(e){}
+    if(typeof saveGame==="function") try{ saveGame(); }catch(e){}
+    showResult("win","🏆 ПОБЕДА!",
+      "Ты продержался до конца!\n\n🎵 Счёт: "+score+
+      "\n🔥 Макс. комбо: "+maxCombo+"×"+
+      "\n❌ Промахи: "+misses+
+      "\n\nНаграды:\n"+rewards.join("\n"));
+  }
+
+  function lose(){
+    running=false;
+    if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    if(typeof playSound==="function") try{ playSound("ui"); }catch(e){}
+    showResult("lose","💀 ПОРАЖЕНИЕ",
+      "Крохлюпик победил...\n\n🎵 Счёт: "+score+
+      "\n🔥 Макс. комбо: "+maxCombo+"×"+
+      "\n❌ Промахи: "+misses);
+  }
+
+  function showResult(kind, title, text){
+    var t=byId("fnf-result-title"), x=byId("fnf-result-text"), r=byId("fnf-result");
+    if(t){ t.textContent=title; t.className=kind; }
+    if(x) x.textContent=text;
+    if(r) r.classList.remove("hidden");
+    var sb=byId("fnf-start-block"); if(sb) sb.classList.add("hidden");
+    var btn=byId("fnf-start-btn"); if(btn) btn.disabled=!canPlay();
+    updateCooldownUI();
+  }
+
+  function bind(){
+    var btn=byId("fnf-btn");
+    if(btn) btn.onclick=function(){ if(typeof playSound==="function") try{ playSound("ui"); }catch(e){} openFnf(); };
+    var start=byId("fnf-start-btn"); if(start) start.onclick=startFnf;
+    var close=byId("fnf-close"); if(close) close.onclick=closeFnf;
+    var rc=byId("fnf-result-close"); if(rc) rc.onclick=function(){ closeFnf(); };
+
+    document.querySelectorAll(".fnf-arrow-btn").forEach(function(b){
+      var dir=b.dataset.fnfDir;
+      if(!dir) return;
+      b.addEventListener("touchstart", function(e){ e.preventDefault(); pressLane(dir); }, {passive:false});
+      b.addEventListener("mousedown", function(e){ e.preventDefault(); pressLane(dir); });
+    });
+
+    // Клавиатура для тестов
+    document.addEventListener("keydown", function(e){
+      if(!running) return;
+      if(e.key==="ArrowLeft") pressLane("left");
+      if(e.key==="ArrowUp") pressLane("up");
+      if(e.key==="ArrowDown") pressLane("down");
+      if(e.key==="ArrowRight") pressLane("right");
+    });
+
+    updateCooldownUI();
+    console.log("[fnf v1] OK");
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 1000); });
+  } else { setTimeout(bind, 1000); }
+  window.addEventListener("load", function(){ setTimeout(bind, 2000); });
+})();
