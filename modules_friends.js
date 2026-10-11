@@ -848,3 +848,90 @@
   } else { setTimeout(bind, 1200); }
   window.addEventListener("load", function(){ setTimeout(bind, 2200); });
 })();
+/* ==== Krochlupic Global Events Banner v1 ==== */
+(function(){
+  "use strict";
+  function byId(id){ return document.getElementById(id); }
+  function fb(){ if(typeof db!=="undefined"&&db) return db; if(typeof firebase!=="undefined"&&firebase.database) return firebase.database(); return null; }
+
+  var activeBoost = null;
+  var activeEvent = null;
+  var tickInterval = null;
+
+  function getOrCreateBanner(){
+    var b = byId("global-event-banner");
+    if(b) return b;
+    b = document.createElement("div");
+    b.id = "global-event-banner";
+    b.style.cssText =
+      "position:fixed;top:0;left:0;right:0;"+
+      "padding:8px 12px;font-size:13px;font-weight:bold;color:#fff;"+
+      "text-align:center;z-index:9998;display:none;"+
+      "box-shadow:0 2px 10px rgba(0,0,0,.5);"+
+      "font-family:sans-serif;pointer-events:none;"+
+      "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"+
+      "text-shadow:0 1px 3px rgba(0,0,0,.7);";
+    document.body.appendChild(b);
+    return b;
+  }
+
+  function fmtTime(ms){
+    if(ms<=0) return "0:00";
+    var s = Math.ceil(ms/1000);
+    var m = Math.floor(s/60); s = s%60;
+    return m+":"+(s<10?"0":"")+s;
+  }
+
+  function render(){
+    var b = getOrCreateBanner();
+    var now = Date.now();
+    var parts = [];
+
+    if(activeBoost && activeBoost.active && activeBoost.endsAt > now){
+      parts.push("⚡ БУСТ ×" + activeBoost.mult + " · " + fmtTime(activeBoost.endsAt - now));
+    }
+    if(activeEvent && activeEvent.endsAt > now){
+      parts.push("🎉 " + activeEvent.name + " ×" + activeEvent.mult + " · " + fmtTime(activeEvent.endsAt - now));
+    }
+
+    if(!parts.length){
+      b.style.display = "none";
+      return;
+    }
+
+    b.textContent = parts.join("   |   ");
+    b.style.display = "block";
+
+    // Цвет градиента: если только буст — фиолетовый, если ивент — оранжевый
+    if(activeEvent && activeEvent.endsAt > now){
+      b.style.background = "linear-gradient(90deg,#7b1fa2,#e91e63,#ff5722)";
+    } else if(activeBoost && activeBoost.active && activeBoost.endsAt > now){
+      b.style.background = "linear-gradient(90deg,#4a148c,#7b1fa2)";
+    }
+  }
+
+  function subscribe(){
+    var d = fb();
+    if(!d){ setTimeout(subscribe, 1000); return; }
+    d.ref("admin/boost").on("value", function(s){
+      activeBoost = s.val() || null;
+      render();
+    });
+    d.ref("admin/events/current").on("value", function(s){
+      activeEvent = s.val() || null;
+      render();
+    });
+  }
+
+  function start(){
+    subscribe();
+    if(tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(render, 500);
+    console.log("[globalevents v1] OK");
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(start, 1500); });
+  } else { setTimeout(start, 1500); }
+  window.addEventListener("load", function(){ setTimeout(start, 2500); });
+})();
