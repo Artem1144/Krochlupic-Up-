@@ -558,3 +558,276 @@
   } else { setTimeout(bind, 900); }
   window.addEventListener("load", function(){ setTimeout(bind, 1800); });
 })();
+/* ==== Krochlupic Competitions v1 ==== */
+(function(){
+  "use strict";
+  function byId(id){ return document.getElementById(id); }
+  function fb(){ if(typeof db!=="undefined"&&db) return db; if(typeof firebase!=="undefined"&&firebase.database) return firebase.database(); return null; }
+  function me(){ return (typeof profile!=="undefined"&&profile&&profile.id)||""; }
+  function myNick(){ return (typeof profile!=="undefined"&&profile&&profile.nickname)||"Аноним"; }
+  function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
+
+  var roomCode=null, myRole=null, compRef=null, roomData=null;
+  var myTaps=0, tickTimer=null, tapPushTimer=null, isTapping=false, duration=10;
+
+  function genCode(){
+    var abc="ABCDEFGHJKMNPQRSTUVWXYZ23456789", s="";
+    for(var i=0;i<4;i++) s+=abc[Math.floor(Math.random()*abc.length)];
+    return s;
+  }
+
+  function openRoom(code, role){
+    roomCode=code; myRole=role; myTaps=0;
+    var mMain=byId("comp-main"), mWait=byId("comp-waiting");
+    if(role==="host"){
+      if(mMain) mMain.classList.add("hidden");
+      if(mWait) mWait.classList.remove("hidden");
+      var rc=byId("comp-room-code"); if(rc) rc.textContent=code;
+    }
+    var d=fb(); if(!d) return;
+    if(compRef) compRef.off();
+    compRef=d.ref("competitions/"+code);
+    compRef.on("value", function(s){
+      var data=s.val();
+      if(!data){ leave(); return; }
+      roomData=data;
+      onRoom(data);
+    });
+  }
+
+  function onRoom(data){
+    if(myRole==="host"&&data.status==="waiting"&&data.guest){
+      fb().ref("competitions/"+roomCode).update({
+        status:"playing",
+        startedAt: Date.now()+3000
+      });
+    }
+    if(data.status==="playing" && !tickTimer){
+      var mWait=byId("comp-waiting"); if(mWait) mWait.classList.add("hidden");
+      var mMain=byId("comp-main"); if(mMain) mMain.classList.add("hidden");
+      var mm=byId("modal-competition"); if(mm) mm.classList.remove("hidden");
+      var mn=byId("comp-me-name"); if(mn) mn.textContent=myNick();
+      var on=byId("comp-opp-name");
+      if(on) on.textContent=(myRole==="host"?data.guestNick:data.hostNick)||"???";
+      startTicking(data);
+    }
+    if(data.status==="finished") showResult(data);
+  }
+
+  function startTicking(data){
+    var dur=data.duration||10;
+    var startAt=data.startedAt||Date.now();
+    var btn=byId("comp-tap-btn"); if(btn) btn.disabled=true;
+    isTapping=false;
+    var started=false;
+
+    tickTimer=setInterval(function(){
+      var el=(Date.now()-startAt)/1000;
+      if(el<0){
+        var cd=byId("comp-countdown"), cn=byId("comp-countdown-num");
+        if(cd) cd.classList.remove("hidden");
+        if(cn) cn.textContent=Math.ceil(-el);
+        return;
+      }
+      if(!started){
+        started=true; isTapping=true;
+        var cd2=byId("comp-countdown"); if(cd2) cd2.classList.add("hidden");
+        if(btn) btn.disabled=false;
+      }
+      var rem=Math.max(0,dur-el);
+      var tm=byId("comp-timer"); if(tm) tm.textContent=rem.toFixed(1);
+      if(rem<=0){
+        clearInterval(tickTimer); tickTimer=null; isTapping=false;
+        if(btn) btn.disabled=true;
+        if(myRole==="host"&&roomData&&roomData.status==="playing") finalize();
+      }
+    },100);
+
+    if(tapPushTimer) clearInterval(tapPushTimer);
+    tapPushTimer=setInterval(function(){
+      if(!roomCode||!myRole) return;
+      var d=fb(); if(!d) return;
+      var f=(myRole==="host")?"hostScore":"guestScore";
+      d.ref("competitions/"+roomCode+"/"+f).set(myTaps);
+    },500);
+  }
+
+  function finalize(){
+    var d=fb(); if(!d||!roomCode) return;
+    d.ref("competitions/"+roomCode).once("value").then(function(s){
+      var data=s.val()||{};
+      var hs=data.hostScore||0, gs=data.guestScore||0;
+      var winner=null;
+      if(hs>gs) winner=data.host; else if(gs>hs) winner=data.guest;
+      d.ref("competitions/"+roomCode).update({
+        status:"finished", winner:winner, finishedAt:Date.now()
+      });
+    });
+  }
+
+  function showResult(data){
+    isTapping=false;
+    if(tickTimer){ clearInterval(tickTimer); tickTimer=null; }
+    if(tapPushTimer){ clearInterval(tapPushTimer); tapPushTimer=null; }
+    if(compRef){ compRef.off(); compRef=null; }
+
+    var hs=data.hostScore||0, gs=data.guestScore||0;
+    var myS=(myRole==="host")?hs:gs, opS=(myRole==="host")?gs:hs;
+    var title="🤝 НИЧЬЯ", cls="tie", delta=0;
+    if(myS>opS){ title="🏆 ПОБЕДА!"; cls="win"; delta=Math.floor(coins*0.01); }
+    else if(myS<opS){ title="💀 ПОРАЖЕНИЕ"; cls="lose"; delta=-Math.floor(coins*0.01); }
+
+    var t=byId("comp-result-title"), x=byId("comp-result-text"), r=byId("comp-result");
+    if(t){ t.textContent=title; t.className="comp-result-title "+cls; }
+    if(x) x.textContent="Твои тапы: "+myS+"\nСоперник: "+opS+
+      (delta>0?"\n\n💰 +"+fmt(delta):delta<0?"\n\n💸 "+fmt(delta):"");
+    if(r) r.classList.remove("hidden");
+
+    if(delta!==0&&typeof coins!=="undefined"){
+      coins+=delta; if(delta>0&&typeof totalEarned!=="undefined") totalEarned+=delta;
+      if(typeof updateUI==="function") try{ updateUI(); }catch(e){}
+      if(typeof saveGame==="function") try{ saveGame(); }catch(e){}
+    }
+    if(myS>opS&&typeof unlocked!=="undefined"){
+      unlocked._compWins=(unlocked._compWins||0)+1;
+    }
+  }
+
+  function leave(){
+    if(tickTimer){ clearInterval(tickTimer); tickTimer=null; }
+    if(tapPushTimer){ clearInterval(tapPushTimer); tapPushTimer=null; }
+    if(compRef){ compRef.off(); compRef=null; }
+    isTapping=false;
+    if(roomCode&&myRole==="host"){
+      var d=fb(); if(d) d.ref("competitions/"+roomCode).remove();
+    }
+    roomCode=null; myRole=null; roomData=null;
+    var mm=byId("modal-competition"); if(mm) mm.classList.add("hidden");
+    var mMain=byId("comp-main"); if(mMain) mMain.classList.remove("hidden");
+    var mWait=byId("comp-waiting"); if(mWait) mWait.classList.add("hidden");
+    var r=byId("comp-result"); if(r) r.classList.add("hidden");
+    var cd=byId("comp-countdown"); if(cd) cd.classList.add("hidden");
+  }
+
+  function createRoom(){
+    var d=fb(), uid=me(); if(!d||!uid) return;
+    var code=genCode();
+    d.ref("competitions/"+code).set({
+      host:uid, hostNick:myNick(), guest:null, guestNick:null,
+      duration:duration, status:"waiting", startedAt:0,
+      hostScore:0, guestScore:0, createdAt:Date.now()
+    }).then(function(){ openRoom(code,"host"); });
+  }
+
+  function joinRoom(code){
+    var d=fb(), uid=me(); if(!d||!uid) return;
+    code=(code||"").toUpperCase().trim();
+    if(code.length!==4){ alert("Код 4 символа"); return; }
+    d.ref("competitions/"+code).once("value").then(function(s){
+      var r=s.val();
+      if(!r){ alert("Комната не найдена"); return; }
+      if(r.host===uid){ alert("Это твоя комната"); return; }
+      if(r.guest&&r.guest!==uid){ alert("Комната занята"); return; }
+      if(r.status!=="waiting"){ alert("Игра уже идёт"); return; }
+      d.ref("competitions/"+code).update({
+        guest:uid, guestNick:myNick()
+      }).then(function(){ openRoom(code,"guest"); });
+    });
+  }
+
+  function quickPlay(){
+    var d=fb(); if(!d){ alert("Firebase недоступен"); return; }
+    d.ref("competitions").once("value").then(function(s){
+      var all=s.val()||{}, uid=me(), found=null;
+      Object.keys(all).forEach(function(c){
+        var r=all[c];
+        if(r&&r.status==="waiting"&&r.host!==uid&&!r.guest) found=c;
+      });
+      if(found) joinRoom(found);
+      else alert("Нет свободных комнат. Создай свою и жди друга.");
+    });
+  }
+
+  function onTap(){
+    if(!isTapping) return;
+    myTaps++;
+    var el=byId("comp-me-taps"); if(el) el.textContent=myTaps;
+    if(typeof vibrate==="function") try{ vibrate(5); }catch(e){}
+  }
+
+  function bind(){
+    var q=byId("comp-quick-btn"); if(q) q.onclick=quickPlay;
+    var c=byId("comp-create-btn"); if(c) c.onclick=createRoom;
+    var j=byId("comp-join-btn"); if(j) j.onclick=function(){
+      var i=byId("comp-code-input"); joinRoom(i?i.value:"");
+    };
+    var cc=byId("comp-copy-code"); if(cc) cc.onclick=function(){
+      var r=byId("comp-room-code"); if(!r) return;
+      try{ navigator.clipboard.writeText(r.textContent); }catch(e){}
+      alert("📋 "+r.textContent);
+    };
+    var cn=byId("comp-cancel-btn"); if(cn) cn.onclick=leave;
+    var tb=byId("comp-tap-btn"); if(tb) tb.onclick=onTap;
+    var lv=byId("comp-leave-btn"); if(lv) lv.onclick=leave;
+    var rc=byId("comp-result-close"); if(rc) rc.onclick=leave;
+
+    document.querySelectorAll(".comp-dur-btn").forEach(function(b){
+      b.onclick=function(){
+        document.querySelectorAll(".comp-dur-btn").forEach(function(x){ x.classList.remove("active"); });
+        b.classList.add("active"); duration=parseInt(b.dataset.dur,10)||10;
+      };
+    });
+
+    console.log("[comp v1] OK");
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 900); });
+  } else { setTimeout(bind, 900); }
+  window.addEventListener("load", function(){ setTimeout(bind, 1800); });
+})();
+/* ==== Krochlupic Season v1 ==== */
+(function(){
+  "use strict";
+  function byId(id){ return document.getElementById(id); }
+  function fb(){ if(typeof db!=="undefined"&&db) return db; if(typeof firebase!=="undefined"&&firebase.database) return firebase.database(); return null; }
+  function me(){ return (typeof profile!=="undefined"&&profile&&profile.id)||""; }
+  function myNick(){ return (typeof profile!=="undefined"&&profile&&profile.nickname)||"Аноним"; }
+  function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
+
+  function seasonId(){
+    var d=new Date();
+    return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2);
+  }
+  function daysLeft(){
+    var d=new Date();
+    var end=new Date(d.getFullYear(), d.getMonth()+1, 1);
+    return Math.ceil((end-d)/(24*60*60*1000));
+  }
+
+  function pushScore(){
+    var d=fb(), uid=me(); if(!d||!uid) return;
+    var score=(typeof totalEarned!=="undefined")?totalEarned:0;
+    d.ref("seasons/"+seasonId()+"/"+uid).set({
+      nickname:myNick(), score:score, ts:Date.now()
+    });
+  }
+
+  function updateHeader(){
+    var sc=byId("season-score"), tl=byId("season-time-left");
+    if(sc) sc.textContent=fmt((typeof totalEarned!=="undefined")?totalEarned:0);
+    if(tl) tl.textContent=daysLeft()+" д";
+  }
+
+  function bind(){
+    updateHeader();
+    pushScore();
+    setInterval(updateHeader, 5000);
+    setInterval(pushScore, 60000);
+    console.log("[season v1] OK");
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 1500); });
+  } else { setTimeout(bind, 1500); }
+})();
