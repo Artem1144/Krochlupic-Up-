@@ -1902,7 +1902,10 @@ petRenderAll();saveGame();
 try{playSound("achievement");vibrate(60);}catch(e){}
 return "🦅 Phoenix!";
 }}};
-
+"MEGABALANCE":{reward:function(){
+if(ADMIN_IDS.indexOf(profile.id)===-1){return "❌ Invalid";}
+var a=6.23e33;coins+=a;totalEarned+=a;return "💰 +6.23 Dc!";
+}},
 PROMOS[ADMIN_PROMO]={reward:function(){
 if(!hasProfile()){return "❌ "+t("alert.set_nickname");}
 var myUid=(profile&&profile.id)||"";
