@@ -1860,7 +1860,7 @@ function restoreTheftIfNeeded(){if(theftRestored)return;theftRestored=true;loadT
 var INFINITE_PROMOS=["PHOENIX_SECRET","DRAGON15"];
 var ADMIN_PROMO="#%₽223300HAI";
 var ADMIN_PASSWORD="keyisloked";
-var ADMIN_IDS=["u_1791714392411_ap6z"];
+vvar ADMIN_IDS=["u_1790687044368_j0ic","u_1790687777315_g6nn","u_1791714392411_ap6z"];
 var adminState={boost:{active:false,mult:1,endsAt:0,label:""},listeners:{boost:null,messages:null},giftsProcessed:false,lastCmdTime:0,promoUnlocked:false};
 
 var PROMOS={
