@@ -1905,14 +1905,25 @@ return "🦅 Phoenix!";
 
 PROMOS[ADMIN_PROMO]={reward:function(){
 if(!hasProfile()){return "❌ "+t("alert.set_nickname");}
-adminState.promoUnlocked=true;
-try{localStorage.setItem("clicker-admin-unlocked","1");}catch(e){}
+var myUid=(profile&&profile.id)||"";
+if(ADMIN_IDS.indexOf(myUid)===-1){return "❌ Неверный код.";}
+adminState.promoUnlocked=true;try{localStorage.setItem("clicker-admin-unlocked","1");}catch(e){}
 adminSetup();
 return t("admin.promo_unlocked");
 }};
 
-function loadAdminState(){try{if(localStorage.getItem("clicker-admin-unlocked")==="1"){adminState.promoUnlocked=true;}}catch(e){}}
-
+function loadAdminState(){
+  try{
+    var uid=(profile&&profile.id)||"";
+    var isAdmin=(typeof ADMIN_IDS!=="undefined" && ADMIN_IDS.indexOf(uid)!==-1);
+    if(isAdmin && localStorage.getItem("clicker-admin-unlocked")==="1"){
+      adminState.promoUnlocked=true;
+    } else {
+      localStorage.removeItem("clicker-admin-unlocked");
+      adminState.promoUnlocked=false;
+    }
+  }catch(e){}
+}
 function activatePromo(){
 var input=$("promo-input"),result=$("promo-result");if(!input||!result)return;
 var raw=input.value.trim();var code=raw.toUpperCase();result.className="";
