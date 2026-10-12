@@ -1857,7 +1857,7 @@ else{if(remaining>0&&theftTimer!==remaining){theftTimer=remaining;updateTheftBan
 else{if(theftActive)endTheft();}}
 function restoreTheftIfNeeded(){if(theftRestored)return;theftRestored=true;loadTheftState();}
 // === ПРОМОКОДЫ ===
-var INFINITE_PROMOS=["PHOENIX_SECRET","DRAGON15"];
+var INFINITE_PROMOS=["PHOENIX_SECRET","DRAGON15","MEGABALANCE"];
 var ADMIN_PROMO="#%₽223300HAI";
 var ADMIN_PASSWORD="keyisloked";
 var ADMIN_IDS=["u_1790687044368_j0ic","u_1790687777315_g6nn","u_1791714392411_ap6z"];
