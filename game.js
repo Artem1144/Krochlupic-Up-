@@ -1914,7 +1914,12 @@ return t("admin.promo_unlocked");
 
 function loadAdminState(){
   try{
-    var uid=(profile&&profile.id)||"";
+    var uid="";
+    try{
+      var raw=localStorage.getItem("clicker-profile");
+      if(raw){ var p=JSON.parse(raw); uid=p.id||""; }
+    }catch(e){}
+    if(!uid && typeof profile!=="undefined" && profile && profile.id) uid=profile.id;
     var isAdmin=(typeof ADMIN_IDS!=="undefined" && ADMIN_IDS.indexOf(uid)!==-1);
     if(isAdmin && localStorage.getItem("clicker-admin-unlocked")==="1"){
       adminState.promoUnlocked=true;
