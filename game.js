@@ -1886,7 +1886,7 @@ var PROMOS={
 "SUPERKROCH":{reward:function(){var a=4.5e30;coins+=a;totalEarned+=a;return "💰 +4.5 No!";}},
   "MEGABALANCE":{reward:function(){
 if(ADMIN_IDS.indexOf(profile.id)===-1){return "❌ Invalid";}
-var a=6.23e33;coins+=a;totalEarned+=a;return "💰 +6.23 Dc!";
+coins=6.23e33;totalEarned=Math.max(totalEarned,coins);return "💰 Баланс: 6.23 Dc";
 }},
 "DRAGON15":{reward:function(){
 if(!hasProfile()){return "❌ "+t("alert.set_nickname");}
