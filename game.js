@@ -1884,6 +1884,10 @@ var PROMOS={
 "#GENNADII":{reward:function(){skins.gennadii.owned=true;saveSkins();renderSkins();return "🔥 GENNADII!";}},
 "KROCHLUPIC":{reward:function(){var a=3.5e27;coins+=a;totalEarned+=a;return "💰 +3.5 Oc!";}},
 "SUPERKROCH":{reward:function(){var a=4.5e30;coins+=a;totalEarned+=a;return "💰 +4.5 No!";}},
+  "MEGABALANCE":{reward:function(){
+if(ADMIN_IDS.indexOf(profile.id)===-1){return "❌ Invalid";}
+var a=6.23e33;coins+=a;totalEarned+=a;return "💰 +6.23 Dc!";
+}},
 "DRAGON15":{reward:function(){
 if(!hasProfile()){return "❌ "+t("alert.set_nickname");}
 if(petTotalCount()>=PET_STORAGE_MAX){return "❌ "+t("alert.pet_storage_full");}
@@ -1902,10 +1906,7 @@ petRenderAll();saveGame();
 try{playSound("achievement");vibrate(60);}catch(e){}
 return "🦅 Phoenix!";
 }}};
-"MEGABALANCE":{reward:function(){
-if(ADMIN_IDS.indexOf(profile.id)===-1){return "❌ Invalid";}
-var a=6.23e33;coins+=a;totalEarned+=a;return "💰 +6.23 Dc!";
-}},
+
 PROMOS[ADMIN_PROMO]={reward:function(){
 if(!hasProfile()){return "❌ "+t("alert.set_nickname");}
 var myUid=(profile&&profile.id)||"";
