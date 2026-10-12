@@ -2682,7 +2682,26 @@ if(typeof setupFriendsUI==="function"&&!window.__patchDone){
   window.__patchDone=true;
   console.log("[patch v108] Заглушки установлены");
 }
-
+// ===== ФИКС: Кликер 67 не должен перебиваться админкой =====
+(function(){
+  setTimeout(function(){
+    var adv = document.getElementById("advanced-btn");
+    if(!adv) return;
+    adv.onclick = function(e){
+      e.preventDefault();
+      var s = confirm("⚠️ Sure?");
+      if(!s) return;
+      var r = confirm("⚠️⚠️ Really?");
+      if(!r) return;
+      if(typeof openSecretMenu === "function"){
+        try{ openSecretMenu(); }catch(err){ alert("Ошибка: " + err.message); }
+      } else {
+        alert("Кликер 67 не загружен");
+      }
+    };
+    console.log("[fix] Кликер 67 восстановлен");
+  }, 3000);
+})();
 // === СТАРТ ===
 initFirebase();
 initSounds();
