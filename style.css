@@ -1135,10 +1135,655 @@ animation-iteration-count:1!important;
 transition-duration:.01ms!important
 }
                         }
-#fnf-overlay{position:fixed;top:0;left:0;right:0;height:100dvh;max-height:100dvh;display:none;flex-direction:column;z-index:9999;background:rgba(0,0,0,.9)}
-@supports not (height:100dvh){#fnf-overlay{height:100vh;max-height:100vh}}
-#fnf-scene{flex:1;position:relative;overflow:hidden}
-#fnf-zone{position:absolute;top:0;left:0;right:0;bottom:130px;overflow:hidden}
-#fnf-controls{height:130px;display:flex;justify-content:space-around;align-items:center;padding:8px 8px 20px;background:rgba(0,0,0,.6)}
-#fnf-controls button{font-size:32px;padding:12px 20px;border-radius:12px;background:#222;color:#fff;border:2px solid #555}
-#fnf-close{position:absolute;top:10px;right:10px;z-index:10;padding:8px 14px;border-radius:10px;background:#c33;color:#fff;border:none}
+/* ==== Хэллоуин 2026 ==== */
+#modal-halloween .modal-box{
+  background:linear-gradient(180deg,#2a0a2e,#1a0520)!important;
+  border:2px solid #ff6f00!important;
+}
+#modal-halloween h2{
+  color:#ffab40!important;
+  text-shadow:0 0 12px rgba(255,111,0,.6)!important;
+}
+.halloween-tabs{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:6px;
+  margin:0 0 15px;
+}
+.halloween-tab{
+  padding:10px 6px;
+  background:#0e1a30;
+  border:2px solid #4a148c;
+  color:#aaa;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:bold;
+  cursor:pointer;
+  text-shadow:none;
+  touch-action:manipulation;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  line-height:1.2;
+}
+.halloween-tab.active{
+  border-color:#ff6f00;
+  color:#ffab40;
+  background:#2a0a2e;
+  box-shadow:0 0 12px rgba(255,111,0,.4);
+}
+.halloween-pane{
+  min-height:120px;
+  max-height:65vh;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+/* ==== Кнопка Хэллоуина у профиля ==== */
+#halloween-side-btn{
+  position:fixed;left:75px;top:15px;width:50px;height:50px;
+  border-radius:12px;border:none;
+  background:linear-gradient(135deg,#ff6f00,#7b1fa2);
+  color:#fff;font-size:26px;cursor:pointer;
+  box-shadow:0 4px 0 #4a148c;outline:none;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;z-index:100;touch-action:manipulation;
+}
+#halloween-side-btn.hidden{display:none !important;}
+
+/* ==== Счётчик конфет ==== */
+#candies-info{text-shadow:0 1px 2px rgba(0,0,0,.4);}
+
+/* ==== Скин "Тыква" ==== */
+#click-btn.skin-pumpkin{
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#click-btn.skin-pumpkin #tap-label{display:none;}
+#click-btn.skin-pumpkin::after{
+  content:"🎃";
+  position:absolute;
+  font-size:140px;
+  line-height:1;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  filter:drop-shadow(0 6px 12px rgba(0,0,0,.5));
+  pointer-events:none;
+  z-index:3;
+  animation:pumpkinBreathe 2.4s ease-in-out infinite;
+}
+#click-btn.skin-pumpkin.cooldown{
+  filter:grayscale(.7) brightness(.6);
+}
+#click-btn.skin-pumpkin.cooldown::after{
+  opacity:.4;
+  filter:grayscale(.7) brightness(.6) drop-shadow(0 6px 12px rgba(0,0,0,.5));
+  animation:none;
+}
+@keyframes pumpkinBreathe{
+  0%,100%{filter:drop-shadow(0 6px 12px rgba(0,0,0,.5));}
+  50%{filter:drop-shadow(0 6px 12px rgba(0,0,0,.5)) drop-shadow(0 0 28px rgba(255,140,0,.9));}
+}
+/* ==== Баннер "Сладость или гадость" ==== */
+.profile-banner-display.banner-halloween{
+  background:linear-gradient(135deg,#1a0000 0%,#7a1a00 40%,#ff6f00 70%,#7b1fa2 100%);
+  color:#fff;letter-spacing:2px;
+  box-shadow:0 0 25px rgba(255,111,0,.7),inset 0 0 40px rgba(0,0,0,.6);
+  animation:halloweenBannerGlow 2.5s ease-in-out infinite;
+}
+@keyframes halloweenBannerGlow{
+  0%,100%{filter:brightness(1);}
+  50%{filter:brightness(1.2) saturate(1.3);}
+}
+.banner-card-preview.banner-halloween{
+  background:linear-gradient(135deg,#1a0000 0%,#7a1a00 40%,#ff6f00 70%,#7b1fa2 100%);
+  color:#fff;
+}
+
+/* ==== Лимит-питомец ==== */
+.pet-card.limited{border-left:5px solid #ff6f00;background:linear-gradient(135deg,#2a0a2e,#1a0520);}
+.pet-card-rarity.limited{color:#ffb74d;}
+/* ==== Ночной индикатор ==== */
+#night-status.night-active{
+  border-color:#ff6f00 !important;
+  background:linear-gradient(135deg,#2a0a2e,#1a0520) !important;
+  box-shadow:0 0 20px rgba(255,111,0,.4);
+}
+#night-status.night-active #night-status-text{
+  color:#ffab40 !important;
+  font-weight:bold;
+}
+/* ==== Призраки и мыши ==== */
+.hw-creature{position:fixed;z-index:9500;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .15s,opacity .3s;pointer-events:auto;text-shadow:0 0 12px rgba(255,171,64,.7),0 2px 6px rgba(0,0,0,.7)}
+.hw-creature:active{transform:scale(.85)}
+.hw-creature.ghost{font-size:64px;animation:hwGhostFloat 2.5s ease-in-out infinite}
+.hw-creature.bat{font-size:48px;animation:hwBatFly 1.2s ease-in-out infinite}
+.hw-creature.golden-bat{font-size:56px;filter:drop-shadow(0 0 20px #ffd54f) drop-shadow(0 0 40px #ff9500);animation:hwBatFly 1s ease-in-out infinite}
+@keyframes hwGhostFloat{
+  0%,100%{transform:translateY(0) rotate(-3deg);opacity:.85}
+  50%{transform:translateY(-14px) rotate(3deg);opacity:1}
+}
+@keyframes hwBatFly{
+  0%,100%{transform:translateY(0) rotate(-8deg)}
+  50%{transform:translateY(-6px) rotate(8deg)}
+}
+.hw-fly-float{animation:hwFlyAcross 9s linear forwards}
+.hw-fly-float.fast{animation-duration:6s}
+@keyframes hwFlyAcross{
+  0%{opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{opacity:0}
+}
+/* ==== Глобальный ивент ==== */
+.hw-global-header{text-align:center;padding:14px;background:linear-gradient(135deg,#2a0a2e,#1a0520);border:1px solid #ff6f00;border-radius:10px;margin-bottom:12px}
+.hw-global-title{font-size:13px;color:#ffab40;font-weight:bold;margin-bottom:6px}
+.hw-global-total{font-size:24px;font-weight:bold;color:#ffd54f;text-shadow:0 0 12px rgba(255,213,79,.6)}
+.hw-global-total small{font-size:13px;color:#aaa;display:block;font-weight:normal;margin-top:3px}
+.hw-global-progress{height:14px;background:#1a2540;border-radius:7px;overflow:hidden;margin:10px 0 6px;border:1px solid #4a148c}
+.hw-global-progress-fill{height:100%;background:linear-gradient(90deg,#ff6f00,#ffd54f);transition:width .4s;border-radius:7px}
+.hw-global-progress-text{font-size:11px;color:#aaa;text-align:center}
+.hw-global-levels{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.hw-global-level{background:#0e1a30;border:1px solid #253a5c;border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:all .3s}
+.hw-global-level.reached{border-color:#ff6f00;background:linear-gradient(135deg,#2a0a2e,#0e1a30)}
+.hw-global-level.claimed{opacity:.55;border-color:#4caf50}
+.hw-global-level-info{flex:1;min-width:0;text-align:left}
+.hw-global-level-need{font-size:12px;color:#ffd54f;font-weight:bold}
+.hw-global-level-reward{font-size:13px;color:#e0e0e0;margin-top:2px}
+.hw-global-level-btn{background:linear-gradient(135deg,#ff6f00,#7b1fa2);border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow:0 3px 0 #4a148c;flex-shrink:0;min-width:80px}
+.hw-global-level-btn:disabled{background:#333;color:#666;box-shadow:none;cursor:not-allowed}
+.hw-global-level-btn.claimed{background:linear-gradient(135deg,#2e7d32,#4caf50);box-shadow:none;cursor:default}
+.hw-global-contrib{text-align:center;font-size:12px;color:#7a8aa8;margin-top:10px;padding:8px;background:#0a1520;border-radius:8px}
+.hw-global-contrib b{color:#ffd54f}
+/* ==== Сундук конфет ==== */
+.hw-candy-chest{background:linear-gradient(135deg,#2a0a2e,#0e1a30);border:2px solid #ff6f00;border-radius:12px;padding:14px;text-align:center;margin-top:12px}
+.hw-candy-chest-title{font-size:14px;color:#ffab40;font-weight:bold;margin-bottom:6px}
+.hw-candy-chest-sub{font-size:12px;color:#aaa;margin-bottom:10px}
+.hw-candy-chest-btn{background:linear-gradient(135deg,#ff6f00,#7b1fa2);color:#fff;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;box-shadow:0 4px 0 #4a148c;width:100%;max-width:280px;margin:0 auto;display:block;transition:transform .1s}
+.hw-candy-chest-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #4a148c}
+.hw-candy-chest-btn:disabled{background:#333;color:#888;box-shadow:none;cursor:not-allowed}
+.hw-candy-chest-timer{font-size:13px;color:#ffd54f;font-weight:bold;margin-top:6px}
+.tap-particle.ghost-particle{
+  filter:drop-shadow(0 0 8px rgba(200,200,255,.8));
+  animation:ghostParticleFly .8s ease-out forwards;
+}
+@keyframes particleFly{
+  0%{opacity:1;transform:translate(0,0) scale(.6) rotate(0);will-change:transform,opacity}
+  100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2) rotate(var(--rot));will-change:auto}
+}
+/* ==== Фон «Жуткие ужасы» ==== */
+body.bg-horror{
+  background:linear-gradient(180deg,#0a0508 0%,#1a0510 40%,#050205 100%)!important;
+}
+#horror-decor{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  display:none;
+  overflow:hidden;
+}
+body.bg-horror #horror-decor{display:block}
+#horror-decor .horror-web{
+  position:absolute;
+  top:0;left:0;
+  width:140px;height:140px;
+  opacity:.75;
+}
+#horror-decor .horror-trees{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:36vh;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  padding:0 8vw;
+  pointer-events:none;
+}
+#horror-decor .horror-tree{
+  width:80px;
+  height:100%;
+  opacity:.9;
+}
+#horror-decor .horror-pumpkin{
+  position:absolute;
+  bottom:2vh;
+  right:22vw;
+  font-size:44px;
+  opacity:.85;
+  filter:drop-shadow(0 0 12px rgba(255,111,0,.5));
+}
+/* Фон-превью в магазине */
+.bg-preview.horror{
+  background:linear-gradient(180deg,#0a0508,#1a0510,#050205);
+  position:relative;
+  overflow:hidden;
+}
+.bg-preview.horror::before{
+  content:"🕸️";
+  position:absolute;
+  top:-4px;left:-4px;
+  font-size:26px;
+  opacity:.9;
+}
+.bg-preview.horror::after{
+  content:"🎃";
+  position:absolute;
+  bottom:2px;right:2px;
+  font-size:22px;
+}
+/* ==== Призрачные частицы ==== */
+.tap-particle.ghost-particle{
+  filter:drop-shadow(0 0 8px rgba(200,200,255,.9)) drop-shadow(0 0 16px rgba(150,100,255,.5));
+}
+@keyframes ghostFly{
+  0%{opacity:1;transform:translate(0,0) scale(.6) rotate(0)}
+  100%{opacity:0;transform:translate(var(--dx),calc(var(--dy) - 40px)) scale(1.4) rotate(var(--rot))}
+}
+.tap-particle.ghost-particle{
+  animation:ghostFly .8s ease-out forwards;
+}
+/* ==== Баннер «Порождение ночи» ==== */
+.profile-banner-display.banner-night{
+  background:linear-gradient(135deg,#0a0018 0%,#2a0a4a 30%,#4a0a3a 60%,#000 100%);
+  color:#e0c0ff;
+  letter-spacing:2px;
+  text-shadow:0 0 8px rgba(180,100,255,.9),0 0 16px rgba(120,50,200,.6);
+  box-shadow:0 0 25px rgba(100,0,180,.7),inset 0 0 40px rgba(0,0,0,.8);
+  animation:nightBannerGlow 3s ease-in-out infinite;
+}
+.profile-banner-display.banner-night::before{
+  content:"🌑 ";
+}
+.profile-banner-display.banner-night::after{
+  content:" 🌑";
+}
+@keyframes nightBannerGlow{
+  0%,100%{filter:brightness(1) saturate(1.2)}
+  50%{filter:brightness(1.3) saturate(1.5)}
+}
+.banner-card-preview.banner-night{
+  background:linear-gradient(135deg,#0a0018 0%,#2a0a4a 30%,#4a0a3a 60%,#000 100%);
+  color:#e0c0ff;
+  text-shadow:0 0 6px rgba(180,100,255,.9);
+}
+/* ==== Хэллоуин: Котёл ==== */
+.hw-cauldron-recipes{display:flex;flex-direction:column;gap:8px}
+.hw-recipe{background:#0e1a30;border:1px solid #4a148c;border-radius:10px;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hw-recipe-icon{font-size:36px;flex-shrink:0}
+.hw-recipe-info{flex:1;min-width:0;text-align:left}
+.hw-recipe-name{font-size:14px;color:#e0c25a;font-weight:bold;margin-bottom:2px}
+.hw-recipe-effect{font-size:12px;color:#4caf50;font-weight:bold}
+.hw-recipe-recipe{font-size:11px;color:#aaa;margin-top:3px}
+.hw-recipe-btn{background:linear-gradient(135deg,#7b1fa2,#ff6f00);border:none;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow:0 3px 0 #4a148c;flex-shrink:0;min-width:90px;text-align:center}
+.hw-recipe-btn:disabled{background:#333;color:#666;box-shadow:none;cursor:not-allowed}
+.hw-recipe-btn.active{background:linear-gradient(135deg,#2e7d32,#4caf50)}
+.hw-potion-active{background:#0e1a30;border:1px solid #4caf50;border-radius:10px;padding:10px;margin-bottom:10px}
+.hw-potion-active-title{font-size:12px;color:#4caf50;font-weight:bold;margin-bottom:6px}
+.hw-potion-active-item{font-size:12px;color:#e0e0e0;margin:3px 0;display:flex;justify-content:space-between}
+.hw-potion-active-item b{color:#ffd54f}
+
+/* ==== Хэллоуин: Глобал ==== */
+.hw-global-header{text-align:center;padding:14px;background:linear-gradient(135deg,#2a0a2e,#1a0520);border:1px solid #ff6f00;border-radius:10px;margin-bottom:12px}
+.hw-global-title{font-size:13px;color:#ffab40;font-weight:bold;margin-bottom:6px}
+.hw-global-total{font-size:24px;font-weight:bold;color:#ffd54f;text-shadow:0 0 12px rgba(255,213,79,.6)}
+.hw-global-total small{font-size:13px;color:#aaa;display:block;font-weight:normal;margin-top:3px}
+.hw-global-progress{height:14px;background:#1a2540;border-radius:7px;overflow:hidden;margin:10px 0 6px;border:1px solid #4a148c}
+.hw-global-progress-fill{height:100%;background:linear-gradient(90deg,#ff6f00,#ffd54f);transition:width .4s;border-radius:7px}
+.hw-global-progress-text{font-size:11px;color:#aaa;text-align:center}
+.hw-global-levels{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.hw-global-level{background:#0e1a30;border:1px solid #253a5c;border-radius:10px;padding:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;transition:all .3s}
+.hw-global-level.reached{border-color:#ff6f00;background:linear-gradient(135deg,#2a0a2e,#0e1a30)}
+.hw-global-level.claimed{opacity:.55;border-color:#4caf50}
+.hw-global-level-info{flex:1;min-width:0;text-align:left}
+.hw-global-level-need{font-size:12px;color:#ffd54f;font-weight:bold}
+.hw-global-level-reward{font-size:13px;color:#e0e0e0;margin-top:2px}
+.hw-global-level-btn{background:linear-gradient(135deg,#ff6f00,#7b1fa2);border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow:0 3px 0 #4a148c;flex-shrink:0;min-width:80px}
+.hw-global-level-btn:disabled{background:#333;color:#666;box-shadow:none;cursor:not-allowed}
+.hw-global-level-btn.claimed{background:linear-gradient(135deg,#2e7d32,#4caf50);box-shadow:none;cursor:default}
+.hw-global-contrib{text-align:center;font-size:12px;color:#7a8aa8;margin-top:10px;padding:8px;background:#0a1520;border-radius:8px}
+.hw-global-contrib b{color:#ffd54f}
+
+/* ==== Хэллоуин: Сундук конфет ==== */
+.hw-candy-chest{background:linear-gradient(135deg,#2a0a2e,#0e1a30);border:2px solid #ff6f00;border-radius:12px;padding:14px;text-align:center;margin-top:12px}
+.hw-candy-chest-title{font-size:14px;color:#ffab40;font-weight:bold;margin-bottom:6px}
+.hw-candy-chest-sub{font-size:12px;color:#aaa;margin-bottom:10px}
+.hw-candy-chest-btn{background:linear-gradient(135deg,#ff6f00,#7b1fa2);color:#fff;border:none;padding:12px 24px;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer;box-shadow:0 4px 0 #4a148c;width:100%;max-width:280px;margin:0 auto;display:block;transition:transform .1s}
+.hw-candy-chest-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #4a148c}
+.hw-candy-chest-btn:disabled{background:#333;color:#888;box-shadow:none;cursor:not-allowed}
+.hw-candy-chest-timer{font-size:13px;color:#ffd54f;font-weight:bold;margin-top:6px}
+.hw-house-build{
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  margin-left:-90px;
+  width:180px;
+  height:150px;
+}
+.hw-house-roof{
+  position:absolute;
+  top:0;
+  left:0;
+  width:180px;
+  height:60px;
+  background:linear-gradient(180deg,#3a0a3a,#1a0520);
+  clip-path:polygon(50% 0%, 100% 100%, 0% 100%);
+  border-bottom:2px solid #4a148c;
+  z-index:2;
+}
+.hw-house-roof::after{
+  content:"🕸️";
+  position:absolute;
+  top:6px;
+  left:12px;
+  font-size:18px;
+  opacity:.7;
+}
+.hw-house-body{
+  position:absolute;
+  top:58px;
+  left:10px;
+  width:160px;
+  height:92px;
+  background:linear-gradient(180deg,#2a0a2a,#1a0518);
+  border:2px solid #4a148c;
+  border-top:none;
+  border-radius:0 0 8px 8px;
+  z-index:1;
+}
+.hw-house-window{
+  position:absolute;
+  top:14px;
+  width:24px;
+  height:24px;
+  background:radial-gradient(circle at 50% 50%, #ffab40, #7a2a0a);
+  border:2px solid #4a148c;
+  border-radius:4px;
+  box-shadow:0 0 12px rgba(255,171,64,.6);
+}
+.hw-house-window.left{left:16px}
+.hw-house-window.right{right:16px}
+.hw-house-door{
+  position:absolute;
+  bottom:0;
+  left:50%;
+  margin-left:-22px;
+  width:44px;
+  height:70px;
+  background:linear-gradient(180deg,#5a2a0a,#3a1505);
+  border:2px solid #2a0a05;
+  border-radius:8px 8px 0 0;
+  cursor:pointer;
+  transition:transform .15s,box-shadow .2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  color:#ffd54f;
+  user-select:none;
+  touch-action:manipulation;
+  z-index:3;
+}
+.hw-house-door::before{
+  content:"🚪";
+  font-size:28px;
+  line-height:1;
+}
+.hw-house-door:active{
+  transform:scale(.94);
+}
+.hw-house-door.knockable{
+  box-shadow:0 0 20px rgba(255,171,64,.8),0 0 40px rgba(255,111,0,.5);
+  animation:hwDoorKnock 1.5s ease-in-out infinite;
+}
+@keyframes hwDoorKnock{
+  0%,100%{transform:rotate(0)}
+  25%{transform:rotate(-3deg)}
+  75%{transform:rotate(3deg)}
+}
+/* ==== Хэллоуин: Дом ==== */
+.hw-house-scene{
+  position:relative;
+  width:100%;
+  max-width:320px;
+  height:220px;
+  margin:0 auto 12px;
+  background:linear-gradient(180deg,#0a0518 0%,#1a0a2a 50%,#0a0518 100%);
+  border:2px solid #4a148c;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.7);
+}
+
+.hw-house-moon{
+  position:absolute;
+  top:10px;
+  right:20px;
+  font-size:32px;
+  filter:drop-shadow(0 0 16px rgba(255,200,100,.7));
+  animation:hwMoonFloat 5s ease-in-out infinite;
+  z-index:1;
+}
+@keyframes hwMoonFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+}
+
+.hw-house-stars{
+  position:absolute;
+  top:8px;
+  left:0;
+  right:0;
+  height:80px;
+  pointer-events:none;
+  z-index:1;
+}
+.hw-house-star{
+  position:absolute;
+  width:2px;
+  height:2px;
+  background:#fff;
+  border-radius:50%;
+  box-shadow:0 0 4px #fff;
+  animation:hwStarBlink 3s ease-in-out infinite;
+}
+@keyframes hwStarBlink{
+  0%,100%{opacity:.3}
+  50%{opacity:1}
+}
+
+.hw-house-build{
+  position:absolute;
+  bottom:0;
+  left:50%;
+  margin-left:-90px;
+  width:180px;
+  height:150px;
+}
+
+.hw-house-roof{
+  position:absolute;
+  top:0;
+  left:0;
+  width:180px;
+  height:60px;
+  background:linear-gradient(180deg,#3a0a3a,#1a0520);
+  clip-path:polygon(50% 0%, 100% 100%, 0% 100%);
+  border-bottom:2px solid #4a148c;
+  z-index:2;
+}
+.hw-house-roof::after{
+  content:"🕸️";
+  position:absolute;
+  top:6px;
+  left:12px;
+  font-size:18px;
+  opacity:.7;
+}
+
+.hw-house-body{
+  position:absolute;
+  top:58px;
+  left:10px;
+  width:160px;
+  height:92px;
+  background:linear-gradient(180deg,#2a0a2a,#1a0518);
+  border:2px solid #4a148c;
+  border-top:none;
+  border-radius:0 0 8px 8px;
+  z-index:1;
+}
+
+.hw-house-window{
+  position:absolute;
+  top:14px;
+  width:22px;
+  height:22px;
+  background:radial-gradient(circle at 50% 50%, #ffab40, #7a2a0a);
+  border:2px solid #4a148c;
+  border-radius:4px;
+  box-shadow:0 0 12px rgba(255,171,64,.6);
+}
+.hw-house-window.left{left:14px}
+.hw-house-window.right{right:14px}
+
+.hw-house-door{
+  position:absolute;
+  bottom:0;
+  left:50%;
+  margin-left:-22px;
+  width:44px;
+  height:70px;
+  background:linear-gradient(180deg,#5a2a0a,#3a1505);
+  border:2px solid #2a0a05;
+  border-radius:8px 8px 0 0;
+  cursor:pointer;
+  transition:transform .15s, box-shadow .2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  color:#ffd54f;
+  user-select:none;
+  touch-action:manipulation;
+  z-index:3;
+}
+.hw-house-door::before{
+  content:"🚪";
+  font-size:28px;
+  line-height:1;
+}
+.hw-house-door:active{
+  transform:scale(.94);
+}
+.hw-house-door.knockable{
+  box-shadow:0 0 20px rgba(255,171,64,.8), 0 0 40px rgba(255,111,0,.5);
+  animation:hwDoorKnock 1.5s ease-in-out infinite;
+}
+@keyframes hwDoorKnock{
+  0%,100%{transform:rotate(0)}
+  25%{transform:rotate(-3deg)}
+  75%{transform:rotate(3deg)}
+}
+.hw-house-door.locked{
+  filter:grayscale(.6) brightness(.6);
+  cursor:not-allowed;
+}
+
+.hw-house-person{
+  position:absolute;
+  bottom:8px;
+  left:50%;
+  margin-left:-40px;
+  width:80px;
+  height:100px;
+  font-size:80px;
+  line-height:100px;
+  text-align:center;
+  opacity:0;
+  transition:opacity .4s, transform .4s;
+  pointer-events:none;
+  filter:drop-shadow(0 0 20px rgba(255,171,64,.7));
+  z-index:10;
+}
+.hw-house-person.show{
+  opacity:1;
+  transform:scale(1.1);
+}
+
+.hw-house-hint{
+  text-align:center;
+  font-size:12px;
+  color:#7a8aa8;
+  margin:0 0 6px;
+  padding:0 10px;
+  line-height:1.3;
+  word-break:break-word;
+}
+
+.hw-house-timer{
+  text-align:center;
+  font-size:13px;
+  color:#ffd54f;
+  font-weight:bold;
+  margin:0 0 10px;
+  padding:0 10px;
+  line-height:1.3;
+  word-break:break-word;
+}
+
+.hw-house-dialog{
+  background:linear-gradient(135deg,#0e1a30,#2a0a2e);
+  border:2px solid #ff6f00;
+  border-radius:12px;
+  padding:14px;
+  text-align:center;
+}
+.hw-house-dialog-title{
+  font-size:14px;
+  color:#ffab40;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+.hw-house-dialog-text{
+  font-size:13px;
+  color:#e0e0e0;
+  margin-bottom:12px;
+  line-height:1.4;
+}
+.hw-house-dialog-btns{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.hw-house-btn{
+  width:100%;
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:bold;
+  cursor:pointer;
+  transition:transform .1s;
+  touch-action:manipulation;
+}
+.hw-house-btn:active{transform:scale(.97)}
+.hw-house-btn.safe{
+  background:linear-gradient(135deg,#2e7d32,#4caf50);
+  color:#fff;
+  box-shadow:0 3px 0 #1b5e20;
+}
+.hw-house-btn.risky{
+  background:linear-gradient(135deg,#e91e63,#7b1fa2);
+  color:#fff;
+  box-shadow:0 3px 0 #4a148c;
+}
+body.low-particles .tap-particle,
+body.low-particles .tap-ring,
+body.low-particles .tap-wave,
+body.low-particles .float-plus,
+body.low-particles .shard-drop{
+  display:none!important;
+}
+body.low-particles .page.shake{
+  animation:none!important;
+                         }
