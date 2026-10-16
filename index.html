@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+(<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -37,9 +37,49 @@
 </noscript>
 
 <canvas id="bg-canvas"></canvas>
+  <div id="horror-decor">
+  <svg class="horror-web" viewBox="0 0 140 140" preserveAspectRatio="xMinYMin meet">
+    <!-- Радиальные нити -->
+    <line x1="0" y1="0" x2="100" y2="20" stroke="rgba(200,200,220,.6)" stroke-width="1"/>
+    <line x1="0" y1="0" x2="80" y2="60" stroke="rgba(200,200,220,.6)" stroke-width="1"/>
+    <line x1="0" y1="0" x2="60" y2="100" stroke="rgba(200,200,220,.6)" stroke-width="1"/>
+    <line x1="0" y1="0" x2="20" y2="120" stroke="rgba(200,200,220,.6)" stroke-width="1"/>
+    <line x1="0" y1="0" x2="120" y2="80" stroke="rgba(200,200,220,.6)" stroke-width="1"/>
+    <line x1="0" y1="0" x2="130" y2="40" stroke="rgba(200,200,220,.6)" stroke-width="1"/>
+    <!-- Дуги -->
+    <path d="M 20 0 Q 10 10 0 20" stroke="rgba(200,200,220,.5)" fill="none" stroke-width="1"/>
+    <path d="M 50 0 Q 25 25 0 50" stroke="rgba(200,200,220,.5)" fill="none" stroke-width="1"/>
+    <path d="M 80 0 Q 40 40 0 80" stroke="rgba(200,200,220,.5)" fill="none" stroke-width="1"/>
+    <path d="M 120 0 Q 60 60 0 120" stroke="rgba(200,200,220,.4)" fill="none" stroke-width="1"/>
+  </svg>
+  <div class="horror-trees">
+    <svg class="horror-tree" viewBox="0 0 80 300" preserveAspectRatio="xMidYMax meet">
+      <!-- Ствол -->
+      <path d="M 38 300 L 38 120 Q 38 100 42 80 L 42 300 Z" fill="#0a0505"/>
+      <!-- Ветви -->
+      <path d="M 40 130 Q 30 110 15 90" stroke="#0a0505" stroke-width="4" fill="none"/>
+      <path d="M 40 150 Q 55 130 70 110" stroke="#0a0505" stroke-width="4" fill="none"/>
+      <path d="M 40 180 Q 20 160 8 140" stroke="#0a0505" stroke-width="3.5" fill="none"/>
+      <path d="M 40 200 Q 60 180 75 165" stroke="#0a0505" stroke-width="3.5" fill="none"/>
+      <path d="M 40 100 Q 30 80 20 60" stroke="#0a0505" stroke-width="3" fill="none"/>
+      <path d="M 40 90 Q 55 70 65 50" stroke="#0a0505" stroke-width="3" fill="none"/>
+    </svg>
+    <svg class="horror-tree" viewBox="0 0 80 300" preserveAspectRatio="xMidYMax meet">
+      <path d="M 38 300 L 38 120 Q 38 100 42 80 L 42 300 Z" fill="#0a0505"/>
+      <path d="M 40 130 Q 30 110 15 90" stroke="#0a0505" stroke-width="4" fill="none"/>
+      <path d="M 40 150 Q 55 130 70 110" stroke="#0a0505" stroke-width="4" fill="none"/>
+      <path d="M 40 180 Q 20 160 8 140" stroke="#0a0505" stroke-width="3.5" fill="none"/>
+      <path d="M 40 200 Q 60 180 75 165" stroke="#0a0505" stroke-width="3.5" fill="none"/>
+      <path d="M 40 100 Q 30 80 20 60" stroke="#0a0505" stroke-width="3" fill="none"/>
+      <path d="M 40 90 Q 55 70 65 50" stroke="#0a0505" stroke-width="3" fill="none"/>
+    </svg>
+  </div>
+  <div class="horror-pumpkin">🎃</div>
+  </div>
 
 <div id="save-indicator" class="save-indicator">💾</div>
 <button id="profile-side-btn" title="Профиль">🏅</button>
+  <button id="halloween-side-btn" class="hidden" title="Хэллоуин">🎃</button>
 <button id="dm-side-btn" class="hidden" title="Сообщения">💬<span id="dm-side-badge" class="dm-side-badge hidden">0</span></button>
 <button id="clan-side-btn" title="Клан">🏰<span id="clan-badge" class="clan-badge hidden">0</span></button>
 <button id="almanac-btn" title="Альманах питомцев">📖</button>
@@ -74,6 +114,7 @@
 <div id="hungry-info" style="display:none" data-i18n="main.hungry">😭 Голодный смайлик: −5M монет/сек</div>
 <div id="gulau-info" style="display:none">🔥 #Gulau: <span data-i18n="main.gulau_mult">×5 тапов, осталось</span> <span id="gulau-timer">15:00</span></div>
 <div id="prestige-info"><span data-i18n="main.crystals">💎 Кристаллов</span>: <span id="crystals">0</span> / 1000</div>
+  <div id="candies-info" class="hidden" style="font-size:15px;color:#ffb74d;margin:5px 0;font-weight:600">🍬 Конфет: <span id="candies">0</span></div>
 <div id="season-info" style="font-size:13px;color:#7fb8e6;margin:6px 0">
 🏆 <span data-i18n="season.rating">Сезонный рейтинг</span>: <b id="season-score">0</b>
 <span style="color:#5a6a8a">·</span>
@@ -317,7 +358,6 @@
 <hr style="border-color:#3a7bd5;margin:20px 0">
 <button id="pahan-btn" class="advanced-btn hidden" type="button" style="background:linear-gradient(135deg,#7b1fa2,#e91e63);color:white;border:none;font-weight:bold">🔥 Автокликер от Pahi</button>
 <hr style="border-color:#3a7bd5;margin:20px 0">
-<button id="admin-open-btn" class="advanced-btn hidden" type="button" style="background:linear-gradient(135deg,#7b1fa2,#4a148c);color:white;font-weight:bold">👑 Админ-консоль</button>
 <button id="admin-open-btn" class="advanced-btn hidden" type="button" style="background:linear-gradient(135deg,#7b1fa2,#4a148c);color:white;font-weight:bold">👑 Админ-консоль</button>
   <button id="advanced-btn" class="advanced-btn" type="button" data-i18n="settings.advanced">🔧 Дополнительные настройки</button>
 <hr style="border-color:#3a7bd5;margin:20px 0">
@@ -641,6 +681,65 @@
 </div>
 </div>
 
+  <div id="modal-halloween" class="modal hidden">
+  <div class="modal-box">
+    <button class="modal-close" data-close="modal-halloween">✕</button>
+    <h2>🎃 Хэллоуин 2026</h2>
+    <div class="halloween-tabs">
+  <button class="halloween-tab active" data-htab="pass">🏮 Пасс</button>
+  <button class="halloween-tab" data-htab="global">🌍 Глобал</button>
+  <button class="halloween-tab" data-htab="cauldron">🧪 Котёл</button>
+  <button class="halloween-tab" data-htab="gifts">🎁 Подарки</button>
+  <button class="halloween-tab" data-htab="night">🌕 Ночь</button>
+      <button class="halloween-tab" data-htab="house">🏠 Дом</button>
+  <button class="halloween-tab" data-htab="info">📖 Инфо</button>
+</div>
+    <div id="halloween-pane-pass" class="halloween-pane">
+      <p style="text-align:center;color:#aaa;font-size:13px">Пасс — в разработке</p>
+    </div>
+    <div id="halloween-pane-gifts" class="halloween-pane hidden">
+      <p style="text-align:center;color:#aaa;font-size:13px">Подарки — в разработке</p>
+    </div>
+    <div id="halloween-pane-night" class="halloween-pane hidden">
+  <div id="night-status" style="text-align:center;padding:14px;background:#0e1a30;border-radius:10px;margin-bottom:14px;border:1px solid #4a148c">
+    <div id="night-status-icon" style="font-size:38px;margin-bottom:6px">🌙</div>
+    <div id="night-status-text" style="font-size:14px;color:#aaa">Загрузка...</div>
+  </div>
+  <div id="night-bonuses" style="background:#0e1a30;border:1px solid #253a5c;border-radius:10px;padding:12px;margin-bottom:14px">
+    <div style="font-size:13px;color:#ffd54f;font-weight:bold;margin-bottom:8px">🎁 Ночные бонусы</div>
+    <div style="font-size:12px;color:#e0e0e0;line-height:1.8">
+      🏮 Шанс фонарика: <b id="night-flash-chance">0.5%</b><br>
+      👻 Призраки: <b id="night-ghost-status">спит</b><br>
+      🦇 Летучие мыши: <b id="night-bat-status">спит</b><br>
+      🌙 Ночные задания: <b id="night-quest-status">недоступны</b>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:#7a8aa8;line-height:1.6">
+    🌕 Ночь Хэллоуина активна<br>
+    <b style="color:#ffab40">с 21:00 до 03:00</b> (МСК)<br>
+    Призраки и мыши — в следующих шагах
+  </div>
+    </div>
+    <div id="halloween-pane-global" class="halloween-pane hidden">
+  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка глобального ивента...</p>
+    </div>
+    <div id="halloween-pane-cauldron" class="halloween-pane hidden">
+  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка котла...</p>
+    </div>
+    <div id="halloween-pane-house" class="halloween-pane hidden">
+  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка дома...</p>
+    </div>
+    <div id="halloween-pane-info" class="halloween-pane hidden">
+      <p style="color:#ddd;font-size:14px;line-height:1.6">
+        🎃 <b>Хэллоуин 2026</b><br>
+        📅 23 октября — 3 ноября<br><br>
+        🏮 <b>Фонарики</b> — выпадают с тапов (0.5%)<br>
+        🎁 <b>Подарки</b> — 7 дней с 24 октября<br>
+        🐾 <b>Лимит-питомец</b> — из яйца только во время ивента
+      </p>
+    </div>
+  </div>
+  </div>
 <div id="fnf-overlay" class="hidden">
 <div id="fnf-scene">
 <div id="fnf-header">
@@ -848,6 +947,7 @@
 <script src="modules.js"></script>
 <script src="modules_friends.js"></script>
 <script src="modules_banners.js"></script>
+<script src="modules_halloween.js"></script>
 <script src="game.js"></script>
 </body>
   </html>
