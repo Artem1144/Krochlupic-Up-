@@ -1,7 +1,8 @@
-/* ==== Krochlupic Halloween 2026 — Полный модуль ==== */
+/* ==== Krochlupic Halloween 2026 — Полный исправленный модуль ==== */
 (function(){
   "use strict";
 
+  // ==== КОНСТАНТЫ ====
   var HALLOWEEN_DEBUG = true;
   var DATE_PASS_START   = new Date("2026-10-23T08:30:00").getTime();
   var DATE_GIFTS_START  = new Date("2026-10-24T08:30:00").getTime();
@@ -13,6 +14,25 @@
   var MSK_OFFSET    = 3 * 60;
   var SPOOKY_PET_CHANCE = 0.045;
   var H_KEY = "clicker-halloween-state";
+
+  var CANDY_CHEST_KEY = "clicker-candy-chest-last";
+  var CANDY_CHEST_COOLDOWN = 60 * 60 * 1000;
+  var CANDY_CHEST_MIN = 5;
+  var CANDY_CHEST_MAX = 30;
+
+  var HOUSE_KEY = "clicker-house-last";
+  var HOUSE_COOLDOWN = 3 * 60 * 60 * 1000;
+  var HOUSE_SAFE = 100;
+  var HOUSE_MIN = 50;
+  var HOUSE_MAX = 125;
+
+  var GLOBAL_KEY = "halloween2026/global";
+
+  // ==== УТИЛИТЫ (объявлены В САМОМ НАЧАЛЕ) ====
+  function byId(id){ return document.getElementById(id); }
+  function show(id){ var m=byId(id); if(m) m.classList.remove("hidden"); }
+  function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
+  function safeRemove(el){ if(el && el.parentNode) el.remove(); }
 
   // ==== ПАСС ====
   var PASS_LEVELS = [
@@ -58,20 +78,6 @@
     { need: 20000, icon: "✨", label: "Эффект тапа «Призраки»",  reward: "tapGhosts" },
     { need: 25000, icon: "🏅", label: "Баннер «Порождение ночи»", reward: "bannerNight" }
   ];
-  var GLOBAL_KEY = "halloween2026/global";
-
-  // ==== СУНДУК КОНФЕТ ====
-  var CANDY_CHEST_KEY = "clicker-candy-chest-last";
-  var CANDY_CHEST_COOLDOWN = 60 * 60 * 1000;
-  var CANDY_CHEST_MIN = 5;
-  var CANDY_CHEST_MAX = 30;
-
-  // ==== ДОМ ====
-  var HOUSE_KEY = "clicker-house-last";
-  var HOUSE_COOLDOWN = 3 * 60 * 60 * 1000;
-  var HOUSE_SAFE = 100;
-  var HOUSE_MIN = 50;
-  var HOUSE_MAX = 125;
 
   // ==== СОСТОЯНИЕ ====
   function loadState(){
@@ -104,7 +110,7 @@
   function saveState(s){ try{ localStorage.setItem(H_KEY, JSON.stringify(s)); }catch(e){} }
   var STATE = loadState();
 
-  // ==== МИГРАЦИЯ: старые конфеты не идут в глобал автоматически ====
+  // ==== МИГРАЦИЯ ====
   (function migrateGlobal(){
     try{
       var raw = localStorage.getItem(H_KEY);
@@ -171,11 +177,6 @@
     return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
   }
 
-  // ==== УТИЛИТЫ ====
-  function byId(id){ return document.getElementById(id); }
-  function show(id){ var m=byId(id); if(m) m.classList.remove("hidden"); }
-  function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
-
   // ==== UI ====
   function updateCandiesUI(){
     var el = byId("candies-info"), val = byId("candies");
@@ -221,17 +222,13 @@
     var rect = btn.getBoundingClientRect();
     var el = document.createElement("div");
     el.textContent = "🏮 +1";
-    el.style.cssText =
-      "position:fixed;left:" + (rect.left + rect.width/2) + "px;top:" + rect.top + "px;"+
-      "transform:translate(-50%,-50%);font-size:26px;font-weight:bold;"+
-      "color:#ffab40;text-shadow:0 0 12px #ff6f00,0 2px 6px rgba(0,0,0,.9);"+
-      "pointer-events:none;z-index:99999;transition:all 1.2s ease-out;";
+    el.style.cssText = "position:fixed;left:" + (rect.left + rect.width/2) + "px;top:" + rect.top + "px;transform:translate(-50%,-50%);font-size:26px;font-weight:bold;color:#ffab40;text-shadow:0 0 12px #ff6f00,0 2px 6px rgba(0,0,0,.9);pointer-events:none;z-index:99999;transition:all 1.2s ease-out;";
     document.body.appendChild(el);
     requestAnimationFrame(function(){
       el.style.top = (rect.top - 120) + "px";
       el.style.opacity = "0";
     });
-    setTimeout(function(){ el.remove(); }, 1300);
+    setTimeout(function(){ safeRemove(el); }, 1300);
     if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
   }
 
@@ -250,9 +247,7 @@
   }
   function tickCritBonus(){
     var bonus = 0;
-    if(typeof petsState !== "undefined" && petsState.active && petsState.active.type === "spookyPet" && petsState.hunger > 0){
-      bonus = 0.015;
-    }
+    if(typeof petsState !== "undefined" && petsState.active && petsState.active.type === "spookyPet" && petsState.hunger > 0) bonus = 0.015;
     window.halloweenCritBonus = bonus;
   }
 
@@ -260,18 +255,16 @@
   function grantPassReward(rewardId){
     var ok = true;
     try{
-      if(rewardId === "gems50"){
-        if(typeof addCrystals === "function") addCrystals(50); else ok = false;
-      } else if(rewardId === "coinHour"){
+      if(rewardId === "gems50"){ if(typeof addCrystals === "function") addCrystals(50); else ok = false; }
+      else if(rewardId === "coinHour"){
         var cps = (typeof getCPS === "function") ? getCPS() : 0;
         var gain = Math.max(1000, Math.floor(cps * 3600));
         if(typeof coins !== "undefined") coins += gain;
         if(typeof totalEarned !== "undefined") totalEarned += gain;
-      } else if(rewardId === "shards500"){
-        if(typeof shards !== "undefined") shards += 500;
-      } else if(rewardId === "candies150"){
-        STATE.candies += 150; saveState(STATE);
-      } else if(rewardId === "boost3"){
+      }
+      else if(rewardId === "shards500"){ if(typeof shards !== "undefined") shards += 500; }
+      else if(rewardId === "candies150"){ STATE.candies += 150; saveState(STATE); }
+      else if(rewardId === "boost3"){
         if(typeof BOOSTERS !== "undefined" && BOOSTERS.boost5){
           BOOSTERS.boost5.storage = (BOOSTERS.boost5.storage || 0) + 3;
           var pb1 = document.createElement("div");
@@ -280,16 +273,18 @@
           pb1.style.color = "#fff";
           pb1.textContent = "⚡ 3 бустера ×5 добавлено в хранилище!";
           document.body.appendChild(pb1);
-          setTimeout(function(){ pb1.remove(); }, 4000);
+          setTimeout(function(){ safeRemove(pb1); }, 4000);
         } else { ok = false; }
-      } else if(rewardId === "skinPumpkin"){
+      }
+      else if(rewardId === "skinPumpkin"){
         STATE.hasPumpkinSkin = true; saveState(STATE);
         if(typeof skins !== "undefined" && skins.pumpkin){
           skins.pumpkin.owned = true;
           if(typeof saveSkins === "function") saveSkins();
           if(typeof renderSkins === "function"){ try{ renderSkins(); }catch(e){} }
         }
-      } else if(rewardId === "mega"){
+      }
+      else if(rewardId === "mega"){
         STATE.candies += 500; saveState(STATE);
         if(typeof addCrystals === "function") addCrystals(100);
         if(typeof shards !== "undefined") shards += 1500;
@@ -358,13 +353,10 @@
   function grantGiftReward(rewardId){
     var ok = true;
     try{
-      if(rewardId === "candies200"){
-        STATE.candies += 200; saveState(STATE);
-      } else if(rewardId === "gems20"){
-        if(typeof addCrystals === "function") addCrystals(20); else ok = false;
-      } else if(rewardId === "shards150"){
-        if(typeof shards !== "undefined") shards += 150;
-      } else if(rewardId === "boost3"){
+      if(rewardId === "candies200"){ STATE.candies += 200; saveState(STATE); }
+      else if(rewardId === "gems20"){ if(typeof addCrystals === "function") addCrystals(20); else ok = false; }
+      else if(rewardId === "shards150"){ if(typeof shards !== "undefined") shards += 150; }
+      else if(rewardId === "boost3"){
         if(typeof BOOSTERS !== "undefined" && BOOSTERS.boost5){
           BOOSTERS.boost5.storage = (BOOSTERS.boost5.storage || 0) + 3;
           var pb2 = document.createElement("div");
@@ -373,18 +365,16 @@
           pb2.style.color = "#fff";
           pb2.textContent = "⚡ 3 бустера ×5 добавлено в хранилище!";
           document.body.appendChild(pb2);
-          setTimeout(function(){ pb2.remove(); }, 4000);
+          setTimeout(function(){ safeRemove(pb2); }, 4000);
         } else { ok = false; }
-      } else if(rewardId === "flash100"){
-        STATE.flashlights += 100; saveState(STATE);
-      } else if(rewardId === "candies250chest3"){
+      }
+      else if(rewardId === "flash100"){ STATE.flashlights += 100; saveState(STATE); }
+      else if(rewardId === "candies250chest3"){
         STATE.candies += 250; saveState(STATE);
         var summaryC = 0, summaryCoins = 0, summarySh = 0;
         for(var i=0;i<3;i++){
           var r = (typeof getChestRewards === "function") ? getChestRewards() : {coins:500,crystals:5,shards:15,booster:"boost2"};
-          summaryC += r.crystals;
-          summaryCoins += r.coins;
-          summarySh += r.shards;
+          summaryC += r.crystals; summaryCoins += r.coins; summarySh += r.shards;
           if(typeof addCrystals === "function") addCrystals(r.crystals);
           if(typeof coins !== "undefined") coins += r.coins;
           if(typeof totalEarned !== "undefined") totalEarned += r.coins;
@@ -397,8 +387,9 @@
         ps.style.color = "#1a1a2e";
         ps.textContent = "🎁 3 сундука: +" + summaryC + "💎 +" + fmt(summaryCoins) + "💰 +" + summarySh + "🌑";
         document.body.appendChild(ps);
-        setTimeout(function(){ ps.remove(); }, 4500);
-      } else if(rewardId === "bannerHalloween"){
+        setTimeout(function(){ safeRemove(ps); }, 4500);
+      }
+      else if(rewardId === "bannerHalloween"){
         STATE.hasBanner = true; saveState(STATE);
         updateBannerFlag();
         if(typeof renderBannerList === "function"){ try{ renderBannerList(); }catch(e){} }
@@ -428,10 +419,7 @@
     var any = false;
     GIFT_DAYS.forEach(function(g){
       if(!STATE.claimedGifts[g.day] && isGiftDayAvailable(g.day)){
-        if(grantGiftReward(g.reward)){
-          STATE.claimedGifts[g.day] = true;
-          any = true;
-        }
+        if(grantGiftReward(g.reward)){ STATE.claimedGifts[g.day] = true; any = true; }
       }
     });
     if(any){ saveState(STATE); renderGifts(); }
@@ -440,9 +428,7 @@
   function renderGifts(){
     var pane = byId("halloween-pane-gifts");
     if(!pane) return;
-    var totalUnclaimed = GIFT_DAYS.filter(function(g){
-      return !STATE.claimedGifts[g.day] && isGiftDayAvailable(g.day);
-    }).length;
+    var totalUnclaimed = GIFT_DAYS.filter(function(g){ return !STATE.claimedGifts[g.day] && isGiftDayAvailable(g.day); }).length;
     var html = '<div style="background:#0e1a30;border:1px solid #ff6f00;border-radius:10px;padding:12px;text-align:center;margin-bottom:12px">'+
       '<div style="font-size:14px;color:#ffab40;font-weight:bold;margin-bottom:6px">🎁 Неделя подарков</div>'+
       '<div style="font-size:12px;color:#aaa;margin-bottom:10px">Забрать можно позже — все сразу</div>'+
@@ -473,12 +459,8 @@
     });
     html += '</div>';
     pane.innerHTML = html;
-    pane.querySelectorAll("[data-hwgift]").forEach(function(b){
-      b.onclick = function(){ claimGift(parseInt(b.dataset.hwgift,10)); };
-    });
-    pane.querySelectorAll("[data-hwall]").forEach(function(b){
-      b.onclick = claimAllGifts;
-    });
+    pane.querySelectorAll("[data-hwgift]").forEach(function(b){ b.onclick = function(){ claimGift(parseInt(b.dataset.hwgift,10)); }; });
+    pane.querySelectorAll("[data-hwall]").forEach(function(b){ b.onclick = claimAllGifts; });
   }
 
   // ==== НОЧЬ + КВЕСТЫ ====
@@ -494,23 +476,14 @@
   function resetNightQuestsIfNeeded(){
     var q = getQuestState();
     var key = getNightKey();
-    if(q.date !== key){
-      STATE.nightQuests = { ghosts: 0, bats: 0, taps: 0, claimed: false, date: key };
-      saveState(STATE);
-    }
+    if(q.date !== key){ STATE.nightQuests = { ghosts: 0, bats: 0, taps: 0, claimed: false, date: key }; saveState(STATE); }
   }
   function updateNightQuestStatus(){
     var q = getQuestState();
     var el = byId("night-quest-status");
     if(!el) return;
-    if(!isNightActive()){
-      el.textContent = "недоступны"; el.style.color = ""; el.style.cursor = ""; el.onclick = null;
-      return;
-    }
-    if(q.claimed){
-      el.textContent = "✅ получено"; el.style.color = "#4caf50"; el.style.cursor = ""; el.onclick = null;
-      return;
-    }
+    if(!isNightActive()){ el.textContent = "недоступны"; el.style.color = ""; el.style.cursor = ""; el.onclick = null; return; }
+    if(q.claimed){ el.textContent = "✅ получено"; el.style.color = "#4caf50"; el.style.cursor = ""; el.onclick = null; return; }
     var done = q.ghosts >= NIGHT_QUESTS.ghosts.need && q.bats >= NIGHT_QUESTS.bats.need && q.taps >= NIGHT_QUESTS.taps.need;
     if(done){
       el.textContent = "🎁 забрать +25💎"; el.style.color = "#ffd54f"; el.style.cursor = "pointer"; el.onclick = claimNightQuest;
@@ -525,20 +498,17 @@
     var done = q.ghosts >= NIGHT_QUESTS.ghosts.need && q.bats >= NIGHT_QUESTS.bats.need && q.taps >= NIGHT_QUESTS.taps.need;
     if(!done) return;
     if(typeof addCrystals === "function") addCrystals(NIGHT_QUEST_TOTAL_REWARD);
-    q.claimed = true;
-    saveState(STATE);
-    updateNightQuestStatus();
+    q.claimed = true; saveState(STATE); updateNightQuestStatus();
     if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
     var popup = document.createElement("div");
     popup.className = "achievement-popup";
     popup.textContent = "🌙 Ночное задание выполнено! +" + NIGHT_QUEST_TOTAL_REWARD + " 💎";
     document.body.appendChild(popup);
-    setTimeout(function(){ popup.remove(); }, 4000);
+    setTimeout(function(){ safeRemove(popup); }, 4000);
   }
   function renderNight(){
     var st = byId("night-status"), stT = byId("night-status-text"), stI = byId("night-status-icon"),
-        fc = byId("night-flash-chance"), gs = byId("night-ghost-status"),
-        bs = byId("night-bat-status");
+        fc = byId("night-flash-chance"), gs = byId("night-ghost-status"), bs = byId("night-bat-status");
     if(!st) return;
     var night = isNightActive();
     if(night){
@@ -567,16 +537,10 @@
   function spawnFloatingReward(x, y, text, color){
     var el = document.createElement("div");
     el.textContent = text;
-    el.style.cssText = "position:fixed;left:"+x+"px;top:"+y+"px;"+
-      "transform:translate(-50%,-50%);font-size:22px;font-weight:bold;"+
-      "color:"+(color||"#ffd54f")+";text-shadow:0 0 12px currentColor,0 2px 6px rgba(0,0,0,.9);"+
-      "pointer-events:none;z-index:99999;transition:all 1.3s ease-out;";
+    el.style.cssText = "position:fixed;left:"+x+"px;top:"+y+"px;transform:translate(-50%,-50%);font-size:22px;font-weight:bold;color:"+(color||"#ffd54f")+";text-shadow:0 0 12px currentColor,0 2px 6px rgba(0,0,0,.9);pointer-events:none;z-index:99999;transition:all 1.3s ease-out;";
     document.body.appendChild(el);
-    requestAnimationFrame(function(){
-      el.style.top = (y - 120) + "px";
-      el.style.opacity = "0";
-    });
-    setTimeout(function(){ el.remove(); }, 1400);
+    requestAnimationFrame(function(){ el.style.top = (y - 120) + "px"; el.style.opacity = "0"; });
+    setTimeout(function(){ safeRemove(el); }, 1400);
   }
   function onGhostClick(el){
     if(!isNightActive()) return;
@@ -594,7 +558,7 @@
     updateCandiesUI();
     var m = byId("modal-halloween");
     if(m && !m.classList.contains("hidden")){ renderPass(); }
-    el.remove();
+    safeRemove(el);
     updateNightQuestStatus();
   }
   function onBatClick(el, isGolden){
@@ -614,7 +578,7 @@
     updateCandiesUI();
     var m = byId("modal-halloween");
     if(m && !m.classList.contains("hidden")){ renderPass(); }
-    el.remove();
+    safeRemove(el);
     updateNightQuestStatus();
   }
   function spawnGhost(){
@@ -629,12 +593,7 @@
     el.onclick = function(e){ e.stopPropagation(); onGhostClick(el); };
     el.addEventListener("touchstart", function(e){ e.preventDefault(); onGhostClick(el); }, {passive:false});
     document.body.appendChild(el);
-    setTimeout(function(){
-      if(el.parentNode){
-        el.style.opacity = "0";
-        setTimeout(function(){ if(el.parentNode) el.remove(); }, 400);
-      }
-    }, GHOST_LIFE_MS);
+    setTimeout(function(){ if(el.parentNode){ el.style.opacity = "0"; setTimeout(function(){ safeRemove(el); }, 400); } }, GHOST_LIFE_MS);
   }
   function spawnBat(){
     if(!isNightActive()) return;
@@ -650,31 +609,22 @@
     el.onclick = function(e){ e.stopPropagation(); onBatClick(el, isGolden); };
     el.addEventListener("touchstart", function(e){ e.preventDefault(); onBatClick(el, isGolden); }, {passive:false});
     document.body.appendChild(el);
-    var speedFactor = isGolden ? 0.65 : 1;
-    var dur = (BAT_FLY_MS * speedFactor);
+    var dur = BAT_FLY_MS * (isGolden ? 0.65 : 1);
     var startT = performance.now();
     function flyAnim(now){
       if(!el.parentNode) return;
       var t = (now - startT) / dur;
-      if(t >= 1){ el.remove(); return; }
-      var curX = fromLeft ? (-80 + t * (W + 160)) : (W + 80 - t * (W + 160));
-      el.style.left = curX + "px";
+      if(t >= 1){ safeRemove(el); return; }
+      el.style.left = (fromLeft ? (-80 + t * (W + 160)) : (W + 80 - t * (W + 160))) + "px";
       requestAnimationFrame(flyAnim);
     }
     requestAnimationFrame(flyAnim);
   }
   function startCreatureScheduler(){
     resetNightQuestsIfNeeded();
-    function scheduleGhost(){
-      var delay = GHOST_MIN_MS + Math.random() * (GHOST_MAX_MS - GHOST_MIN_MS);
-      setTimeout(function(){ if(isNightActive()) spawnGhost(); scheduleGhost(); }, delay);
-    }
-    function scheduleBat(){
-      var delay = BAT_MIN_MS + Math.random() * (BAT_MAX_MS - BAT_MIN_MS);
-      setTimeout(function(){ if(isNightActive()) spawnBat(); scheduleBat(); }, delay);
-    }
-    scheduleGhost();
-    scheduleBat();
+    function scheduleGhost(){ var d = GHOST_MIN_MS + Math.random() * (GHOST_MAX_MS - GHOST_MIN_MS); setTimeout(function(){ if(isNightActive()) spawnGhost(); scheduleGhost(); }, d); }
+    function scheduleBat(){ var d = BAT_MIN_MS + Math.random() * (BAT_MAX_MS - BAT_MIN_MS); setTimeout(function(){ if(isNightActive()) spawnBat(); scheduleBat(); }, d); }
+    scheduleGhost(); scheduleBat();
     setInterval(function(){ resetNightQuestsIfNeeded(); updateNightQuestStatus(); }, 5000);
   }
   (function hookTapsForQuest(){
@@ -693,11 +643,8 @@
   // ==== КОТЁЛ ====
   function getActivePotions(){
     if(!STATE.potions || typeof STATE.potions !== "object") STATE.potions = {};
-    var now = Date.now();
-    var changed = false;
-    Object.keys(STATE.potions).forEach(function(rid){
-      if(STATE.potions[rid].endsAt <= now){ delete STATE.potions[rid]; changed = true; }
-    });
+    var now = Date.now(), changed = false;
+    Object.keys(STATE.potions).forEach(function(rid){ if(STATE.potions[rid].endsAt <= now){ delete STATE.potions[rid]; changed = true; } });
     if(changed) saveState(STATE);
     return STATE.potions;
   }
@@ -747,8 +694,7 @@
     if(!recipe) return;
     var check = checkRecipeCost(recipe);
     if(!check.ok){ alert(check.reason); return; }
-    var potions = getActivePotions();
-    var conflict = null;
+    var potions = getActivePotions(), conflict = null;
     for(var j=0;j<RECIPES.length;j++){
       var r = RECIPES[j];
       if(r.category === recipe.category && r.id !== recipe.id && potions[r.id]){ conflict = r; break; }
@@ -768,7 +714,7 @@
     popup.style.color = "#fff";
     popup.textContent = recipe.icon + " Сварено: " + recipe.name;
     document.body.appendChild(popup);
-    setTimeout(function(){ popup.remove(); }, 3000);
+    setTimeout(function(){ safeRemove(popup); }, 3000);
   }
   function renderCauldron(){
     var pane = byId("halloween-pane-cauldron");
@@ -822,9 +768,7 @@
     });
     html += "</div>";
     pane.innerHTML = html;
-    pane.querySelectorAll("[data-brew]").forEach(function(b){
-      b.onclick = function(){ brewPotion(b.dataset.brew); };
-    });
+    pane.querySelectorAll("[data-brew]").forEach(function(b){ b.onclick = function(){ brewPotion(b.dataset.brew); }; });
   }
   setInterval(function(){
     var pane = byId("halloween-pane-cauldron");
@@ -834,6 +778,7 @@
 
   // ==== ГЛОБАЛ ====
   var globalRef = null;
+  var claimsRef = null;
   var globalState = { total: 0, myContribution: 0, myClaims: {}, lastPush: 0 };
 
   function pushCandiesToGlobal(amount){
@@ -844,8 +789,8 @@
     if(!uid) return;
     d.ref(GLOBAL_KEY + "/total").transaction(function(cur){ return (cur || 0) + amount; }).catch(function(){});
     d.ref(GLOBAL_KEY + "/contributors/" + uid).transaction(function(cur){
-      cur = cur || { nick: (profile.nickname || "Аноним"), candies: 0 };
-      cur.nick = profile.nickname || "Аноним";
+      cur = cur || { nick: ((typeof profile!=="undefined"&&profile&&profile.nickname)||"Аноним"), candies: 0 };
+      cur.nick = (typeof profile!=="undefined"&&profile&&profile.nickname) || "Аноним";
       cur.candies = (cur.candies || 0) + amount;
       cur.ts = Date.now();
       return cur;
@@ -853,39 +798,28 @@
     globalState.myContribution += amount;
     globalState.lastPush = Date.now();
   }
-
-  // ==== РУЧНОЕ ВЛОЖЕНИЕ В ГЛОБАЛ ====
   function depositToGlobal(){
     var uid = (typeof profile !== "undefined" && profile && profile.id) ? profile.id : "";
     if(!uid){ alert("❌ Сначала задай ник в профиле!"); return; }
     var d = (typeof db !== "undefined" && db) ? db : null;
     if(!d){ alert("❌ Firebase не подключён"); return; }
-
     var cur = STATE.candies || 0;
     var already = STATE.globalDeposited || 0;
     var delta = cur - already;
-
-    if(delta <= 0){
-      alert("❌ Нечего вкладывать — новых конфет нет.");
-      return;
-    }
-
+    if(delta <= 0){ alert("❌ Нечего вкладывать — новых конфет нет."); return; }
     pushCandiesToGlobal(delta);
     STATE.globalDeposited = cur;
     saveState(STATE);
-
     if(typeof updateUI === "function") try{ updateUI(); }catch(e){}
     if(typeof saveGame === "function") try{ saveGame(); }catch(e){}
     if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
-
     var popup = document.createElement("div");
     popup.className = "achievement-popup";
     popup.style.background = "linear-gradient(135deg,#7b1fa2,#ff6f00)";
     popup.style.color = "#fff";
     popup.textContent = "🌍 +" + delta + " 🍬 в общий счёт!";
     document.body.appendChild(popup);
-    setTimeout(function(){ popup.remove(); }, 4000);
-
+    setTimeout(function(){ safeRemove(popup); }, 4000);
     var pane = byId("halloween-pane-global");
     if(pane && !pane.classList.contains("hidden")) renderGlobalEvent();
   }
@@ -893,9 +827,10 @@
 
   function subscribeGlobal(){
     var d = (typeof db !== "undefined" && db) ? db : null;
-    if(!d) return;
+    if(!d) return false;
     var uid = (typeof profile !== "undefined" && profile && profile.id) ? profile.id : "";
     if(globalRef) globalRef.off();
+    if(claimsRef) claimsRef.off();
     globalRef = d.ref(GLOBAL_KEY);
     globalRef.on("value", function(s){
       var data = s.val() || {};
@@ -906,12 +841,20 @@
       if(pane && !pane.classList.contains("hidden")) renderGlobalEvent();
     });
     if(uid){
-      d.ref(GLOBAL_KEY + "/claims/" + uid).on("value", function(s){
+      claimsRef = d.ref(GLOBAL_KEY + "/claims/" + uid);
+      claimsRef.on("value", function(s){
         globalState.myClaims = s.val() || {};
         var pane = byId("halloween-pane-global");
         if(pane && !pane.classList.contains("hidden")) renderGlobalEvent();
       });
     }
+    return true;
+  }
+  function trySubscribeGlobal(retries){
+    retries = retries || 0;
+    if(subscribeGlobal()) return;
+    if(retries > 20) return;
+    setTimeout(function(){ trySubscribeGlobal(retries + 1); }, 500);
   }
   function isLevelReached(level){ return globalState.total >= level.need; }
   function grantGlobalReward(rewardId){
@@ -935,10 +878,10 @@
         ps.style.color = "#fff";
         ps.textContent = "🎁 " + count + " сундуков: +" + sumC + "💎 +" + fmt(sumCoins) + "💰 +" + sumSh + "🌑";
         document.body.appendChild(ps);
-        setTimeout(function(){ ps.remove(); }, 4500);
-      } else if(rewardId === "gems50"){
-        if(typeof addCrystals === "function") addCrystals(50); else ok = false;
-      } else if(rewardId === "petEgg"){
+        setTimeout(function(){ safeRemove(ps); }, 4500);
+      }
+      else if(rewardId === "gems50"){ if(typeof addCrystals === "function") addCrystals(50); else ok = false; }
+      else if(rewardId === "petEgg"){
         if(typeof petsState !== "undefined" && petsState){
           if(typeof petTotalCount === "function" && petTotalCount() >= 5){ ok = false; }
           else {
@@ -946,25 +889,24 @@
             if(typeof petRenderAll === "function") try{ petRenderAll(); }catch(e){}
           }
         } else { ok = false; }
-      } else if(rewardId === "petXP250"){
+      }
+      else if(rewardId === "petXP250"){
         if(typeof petsState !== "undefined" && petsState){
           petsState.xp = (petsState.xp || 0) + 250;
           if(typeof petRenderTopBar === "function") try{ petRenderTopBar(); }catch(e){}
         } else { ok = false; }
-      } else if(rewardId === "bgHorror"){
+      }
+      else if(rewardId === "bgHorror"){
         if(typeof BACKGROUNDS !== "undefined"){
           if(!BACKGROUNDS.horror) BACKGROUNDS.horror = { id:"horror", name:"🩸 Ужасные ужасы", cls:"bg-horror", cost:0, particles:null, owned:true };
           else BACKGROUNDS.horror.owned = true;
         }
         if(typeof saveGame === "function") try{ saveGame(); }catch(e){}
         if(typeof renderBackgrounds === "function") try{ renderBackgrounds(); }catch(e){}
-      } else if(rewardId === "shards750"){
-        if(typeof shards !== "undefined") shards += 750; else ok = false;
-      } else if(rewardId === "tapGhosts"){
-        window.__hwTapGhostsEffect = true;
-        STATE.hasTapGhostsEffect = true;
-        saveState(STATE);
-      } else if(rewardId === "bannerNight"){
+      }
+      else if(rewardId === "shards750"){ if(typeof shards !== "undefined") shards += 750; else ok = false; }
+      else if(rewardId === "tapGhosts"){ window.__hwTapGhostsEffect = true; STATE.hasTapGhostsEffect = true; saveState(STATE); }
+      else if(rewardId === "bannerNight"){
         window.__halloweenBannerNight = true;
         STATE.hasBannerNight = true;
         saveState(STATE);
@@ -997,7 +939,7 @@
     popup.style.color = "#fff";
     popup.textContent = "🌍 " + lvl.icon + " " + lvl.label;
     document.body.appendChild(popup);
-    setTimeout(function(){ popup.remove(); }, 4000);
+    setTimeout(function(){ safeRemove(popup); }, 4000);
   }
 
   // ==== СУНДУК КОНФЕТ ====
@@ -1035,7 +977,7 @@
     popup.style.color = "#1a1a2e";
     popup.textContent = "🎁 +" + reward + " 🍬 из сундука!";
     document.body.appendChild(popup);
-    setTimeout(function(){ popup.remove(); }, 4000);
+    setTimeout(function(){ safeRemove(popup); }, 4000);
   }
   setInterval(function(){
     var el = byId("hw-candy-chest-timer");
@@ -1078,8 +1020,7 @@
       var reached = isLevelReached(lvl);
       var claimed = !!globalState.myClaims[idx];
       var cls = "hw-global-level";
-      if(claimed) cls += " claimed";
-      else if(reached) cls += " reached";
+      if(claimed) cls += " claimed"; else if(reached) cls += " reached";
       var btn;
       if(claimed) btn = '<button class="hw-global-level-btn claimed" disabled>✅ Получено</button>';
       else if(reached) btn = '<button class="hw-global-level-btn" data-gclaim="'+idx+'">🎁 Забрать</button>';
@@ -1095,26 +1036,20 @@
     html += '</div>';
     html += '<div class="hw-global-contrib">Мой вклад: <b>'+fmt(myContrib)+' 🍬</b></div>';
 
-    // Кнопка «Вложить в глобал»
     var curCandies = STATE.candies || 0;
     var deposited = STATE.globalDeposited || 0;
     var delta = Math.max(0, curCandies - deposited);
     var canDeposit = delta > 0;
-    var depositBtnText = canDeposit
-      ? '📥 Вложить ' + delta + ' 🍬 в общий счёт'
-      : '📥 Нечего вкладывать';
+    var depositBtnText = canDeposit ? ('📥 Вложить ' + delta + ' 🍬 в общий счёт') : '📥 Нечего вкладывать';
     var depositBtnDisabled = canDeposit ? '' : ' disabled';
 
     html += '<div class="hw-candy-chest" style="border-color:#7b1fa2">'+
       '<div class="hw-candy-chest-title" style="color:#c9a0ff">🌍 Вложить в общий счёт</div>'+
       '<div class="hw-candy-chest-sub">Конфеты <b>не списываются</b> — их можно тратить на зелья</div>'+
-      '<button id="hw-deposit-btn" class="hw-candy-chest-btn" style="background:linear-gradient(135deg,#7b1fa2,#e91e63)"'+depositBtnDisabled+'>'+
-        depositBtnText +
-      '</button>'+
+      '<button id="hw-deposit-btn" class="hw-candy-chest-btn" style="background:linear-gradient(135deg,#7b1fa2,#e91e63)"'+depositBtnDisabled+'>'+depositBtnText+'</button>'+
       '<div class="hw-candy-chest-timer" style="color:#c9a0ff">Уже вложено: ' + fmt(deposited) + ' 🍬</div>'+
     '</div>';
 
-    // Сундук
     var chestLeft = getCandyChestLeft();
     var chestDisabled = chestLeft > 0 ? " disabled" : "";
     var chestTimer = chestLeft > 0 ? ("⏳ Готов через " + fmtChestTime(chestLeft)) : "✨ Сундук готов!";
@@ -1126,9 +1061,7 @@
     '</div>';
 
     pane.innerHTML = html;
-    pane.querySelectorAll("[data-gclaim]").forEach(function(b){
-      b.onclick = function(){ claimGlobalLevel(parseInt(b.dataset.gclaim, 10)); };
-    });
+    pane.querySelectorAll("[data-gclaim]").forEach(function(b){ b.onclick = function(){ claimGlobalLevel(parseInt(b.dataset.gclaim, 10)); }; });
     var chestBtn = byId("hw-candy-chest-btn");
     if(chestBtn) chestBtn.onclick = openCandyChest;
     var depositBtn = byId("hw-deposit-btn");
@@ -1151,20 +1084,12 @@
   }
   function knockHouse(){
     var left = getHouseLeft();
-    if(left > 0){
-      alert("⏳ Дверь откроется через " + fmtHouseTime(left));
-      return;
-    }
-    var person = byId("hw-house-person");
-    var dialog = byId("hw-house-dialog");
-    var scene = byId("hw-house-scene");
+    if(left > 0){ alert("⏳ Дверь откроется через " + fmtHouseTime(left)); return; }
+    var person = byId("hw-house-person"), dialog = byId("hw-house-dialog"), scene = byId("hw-house-scene");
     if(person) person.classList.add("show");
     if(scene) scene.classList.add("knocking");
     if(typeof playSound === "function"){ try{ playSound("ui"); }catch(e){} }
-    setTimeout(function(){
-      if(dialog) dialog.classList.remove("hidden");
-      renderHouseDialog();
-    }, 600);
+    setTimeout(function(){ if(dialog) dialog.classList.remove("hidden"); renderHouseDialog(); }, 600);
   }
   function renderHouseDialog(){
     var dialog = byId("hw-house-dialog");
@@ -1176,20 +1101,14 @@
         '<button class="hw-house-btn safe" id="hw-house-safe">🍬 100 конфет (точно)</button>' +
         '<button class="hw-house-btn risky" id="hw-house-risky">🎲 50–125 (рандом)</button>' +
       '</div>';
-    var safeBtn = byId("hw-house-safe");
-    var riskyBtn = byId("hw-house-risky");
+    var safeBtn = byId("hw-house-safe"), riskyBtn = byId("hw-house-risky");
     if(safeBtn) safeBtn.onclick = function(){ chooseHouse("safe"); };
     if(riskyBtn) riskyBtn.onclick = function(){ chooseHouse("risky"); };
   }
   function chooseHouse(mode){
     var left = getHouseLeft();
     if(left > 0) return;
-    var reward = 0;
-    if(mode === "safe"){
-      reward = HOUSE_SAFE;
-    } else {
-      reward = HOUSE_MIN + Math.floor(Math.random() * (HOUSE_MAX - HOUSE_MIN + 1));
-    }
+    var reward = (mode === "safe") ? HOUSE_SAFE : (HOUSE_MIN + Math.floor(Math.random() * (HOUSE_MAX - HOUSE_MIN + 1)));
     STATE.candies += reward;
     saveState(STATE);
     try{ localStorage.setItem(HOUSE_KEY, Date.now().toString()); }catch(e){}
@@ -1197,24 +1116,16 @@
     if(typeof saveGame === "function") try{ saveGame(); }catch(e){}
     if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
     updateCandiesUI();
-
-    var dialog = byId("hw-house-dialog");
-    var person = byId("hw-house-person");
-    var scene = byId("hw-house-scene");
+    var dialog = byId("hw-house-dialog"), person = byId("hw-house-person"), scene = byId("hw-house-scene");
     if(dialog) dialog.classList.add("hidden");
-    setTimeout(function(){
-      if(person) person.classList.remove("show");
-      if(scene) scene.classList.remove("knocking");
-    }, 400);
-
+    setTimeout(function(){ if(person) person.classList.remove("show"); if(scene) scene.classList.remove("knocking"); }, 400);
     var popup = document.createElement("div");
     popup.className = "achievement-popup";
     popup.style.background = "linear-gradient(135deg,#ff6f00,#ffd54f)";
     popup.style.color = "#1a1a2e";
     popup.textContent = "🍬 +" + reward + " конфет!";
     document.body.appendChild(popup);
-    setTimeout(function(){ popup.remove(); }, 4000);
-
+    setTimeout(function(){ safeRemove(popup); }, 4000);
     renderHouse();
   }
   function renderHouse(){
@@ -1222,7 +1133,6 @@
     if(!pane) return;
     var left = getHouseLeft();
     var isKnockable = left <= 0;
-
     var starsHtml = "";
     for(var i=0;i<12;i++){
       var top = Math.random()*80 + 10;
@@ -1230,7 +1140,6 @@
       var delay = (Math.random()*3).toFixed(2);
       starsHtml += '<div class="hw-house-star" style="top:'+top+'%;left:'+leftP+'%;animation-delay:'+delay+'s"></div>';
     }
-
     var html =
       '<div class="hw-house-scene" id="hw-house-scene">' +
         '<div class="hw-house-moon">🌕</div>' +
@@ -1252,7 +1161,6 @@
           '<div class="hw-house-timer" id="hw-house-timer">⏳ Откроется через ' + fmtHouseTime(left) + '</div>'
       ) +
       '<div id="hw-house-dialog" class="hw-house-dialog hidden" style="margin-top:12px"></div>';
-
     pane.innerHTML = html;
     var door = byId("hw-house-door");
     if(door) door.onclick = knockHouse;
@@ -1272,9 +1180,6 @@
       if(door){ door.classList.remove("knockable"); door.classList.add("locked"); }
     }
   }, 1000);
-
-  window.knockHouse = knockHouse;
-  window.renderHouse = renderHouse;
 
   // ==== МОДАЛКА ====
   function bindModal(){
@@ -1300,26 +1205,20 @@
     if(!isEventActive()){ alert("🎃 Хэллоуин-ивент неактивен\n\nСтарт: 23 октября 08:30"); return; }
     show("modal-halloween");
     if(typeof syncScrollLock === "function"){ try{ syncScrollLock(); }catch(e){} }
-    renderPass();
-    renderGifts();
-    renderNight();
-    renderCauldron();
-    renderGlobalEvent();
-    renderHouse();
+    renderPass(); renderGifts(); renderNight(); renderCauldron(); renderGlobalEvent(); renderHouse();
   }
   function bindSideBtn(){
     var b = byId("halloween-side-btn");
     if(!b || b.__hwB) return;
     b.__hwB = true;
-    b.onclick = function(e){
-      e.preventDefault();
-      if(typeof playSound === "function"){ try{ playSound("ui"); }catch(e){} }
-      openHalloween();
-    };
+    b.onclick = function(e){ e.preventDefault(); if(typeof playSound === "function"){ try{ playSound("ui"); }catch(e){} } openHalloween(); };
   }
 
   // ==== ЗАПУСК ====
+  var _started = false;
   function start(){
+    if(_started) return;
+    _started = true;
     hookTap();
     hookPetRoll();
     bindModal();
@@ -1330,7 +1229,7 @@
     startCreatureScheduler();
     updateNightQuestStatus();
     publishPotionBonuses();
-    setTimeout(subscribeGlobal, 3000);
+    setTimeout(function(){ trySubscribeGlobal(0); }, 3000);
     console.log("[halloween] Полный модуль запущен");
   }
 
@@ -1344,6 +1243,8 @@
   window.renderGlobalEvent = renderGlobalEvent;
   window.pushCandiesToGlobal = pushCandiesToGlobal;
   window.openCandyChest = openCandyChest;
+  window.knockHouse = knockHouse;
+  window.renderHouse = renderHouse;
   window.halloweenState = STATE;
 
   if(document.readyState === "loading"){
@@ -1351,9 +1252,5 @@
   } else { setTimeout(start, 1200); }
   window.addEventListener("load", function(){ setTimeout(start, 2000); });
 
-  setInterval(function(){
-    updateSideBtn();
-    updateCandiesUI();
-    tickCritBonus();
-  }, 2000);
+  setInterval(function(){ updateSideBtn(); updateCandiesUI(); tickCritBonus(); }, 2000);
 })();
