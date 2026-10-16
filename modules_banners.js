@@ -15,7 +15,9 @@
     { id:"legend",    name:"🌟 Легенда",          desc:"Топ-1 лидерборда",        check: function(){ return (typeof unlocked!=="undefined" && unlocked.leader_top1===true); } },
     { id:"absolute",  name:"🔱 Абсолют",          desc:"Абсолют 699 ур.",         check: function(){ return (typeof upgrades!=="undefined" && upgrades.absolute && upgrades.absolute.count>=699); } },
     { id:"genesis",   name:"💠 Генезис",          desc:"7 питомцев",              check: function(){ return (typeof petTotalCount==="function" && petTotalCount()>=7); } },
-    { id:"bloodlord", name:"🩸 Кровавый Лорд",    desc:"10 побед в сорев.",       check: function(){ return (typeof unlocked!=="undefined" && (unlocked._compWins||0)>=10); } }
+    { id:"bloodlord", name:"🩸 Кровавый Лорд",    desc:"10 побед в сорев.",       check: function(){ return (typeof unlocked!=="undefined" && (unlocked._compWins||0)>=10); } },
+    { id:"halloween", name:"🍬 Сладость или гадость", desc:"Хэллоуин 2026", check: function(){ return (typeof window.__halloweenBanner === "boolean" && window.__halloweenBanner); } },
+{ id:"night",     name:"🌑 Порождение ночи",     desc:"Хэллоуин 2026 · 25 000 🍬", check: function(){ return (typeof window.__halloweenBannerNight === "boolean" && window.__halloweenBannerNight); } }
   ];
 
   var STORAGE_KEY = "clicker-active-banner";
