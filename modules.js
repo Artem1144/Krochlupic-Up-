@@ -30,7 +30,6 @@
     return (n/1e12).toFixed(2)+"T";
   }
 
-  // Уровни клана (порог / бонус)
   var CLAN_LEVELS = [
     { lvl:1, need:0,        bonus:0    },
     { lvl:2, need:50000,    bonus:0.01 },
@@ -86,7 +85,6 @@
         var roleTxt={owner:"👑 Владелец", officer:"🛡 Офицер", member:"👤 Участник"}[role]||"👤 Участник";
         set("clan-my-role", roleTxt);
 
-        // ==== УРОВЕНЬ КЛАНА + ВЛОЖЕНО ====
         var invested = c.invested || 0;
         var info = getClanLevelInfo(invested);
         set("clan-level-value", info.current.lvl + " / 5");
@@ -107,8 +105,8 @@
         }
         var bonusPct = Math.round(info.current.bonus * 100);
         set("clan-level-bonus", "+" + bonusPct + "%");
+        window.__clanBonus = info.current.bonus;
 
-        // ==== УЧАСТНИКИ + ОНЛАЙН ====
         var list=byId("clan-members-list");
         if(list){
           list.innerHTML="";
@@ -129,7 +127,6 @@
                   '<div class="clan-member-role">'+rt+' <span class="clan-member-online" style="font-size:11px;color:#888">…</span></div>'+
                 '</div>';
               list.appendChild(row);
-              // Онлайн-статус по lastSeen
               d.ref("users/"+uid+"/lastSeen").once("value").then(function(us){
                 var lastSeen = us.val() || 0;
                 var diff = Math.floor((Date.now() - lastSeen) / 1000);
@@ -154,7 +151,6 @@
           }
         }
 
-        // ==== ЧАТ ====
         var chatRef = d.ref("clans/"+cid+"/chat");
         chatRef.off();
         chatRef.limitToLast(50).on("value", function(chatSnap){
@@ -179,7 +175,6 @@
     });
   }
 
-  // ==== ПОИСК КЛАНОВ ====
   function searchClans(){
     var inp=byId("clan-search-input"), out=byId("clan-search-results");
     if(!inp || !out) return;
@@ -219,7 +214,6 @@
     }).catch(function(e){ out.innerHTML='<p class="clan-empty-msg" style="color:#ff5252">'+e.message+'</p>'; });
   }
 
-  // ==== ЧАТ: ОТПРАВКА ====
   function sendChat(){
     var inp=byId("clan-chat-input");
     if(!inp) return;
@@ -239,7 +233,6 @@
     });
   }
 
-  // ==== ВКЛАД ====
   function investClan(amount){
     var d=fb(), me=myId();
     if(!d || !me) return;
@@ -265,7 +258,6 @@
     });
   }
 
-  // ==== ПРИВЯЗКА ====
   function bind(){
     var cb=byId("clan-side-btn");
     if(cb) cb.onclick=function(e){ e.preventDefault(); openClan(); };
@@ -325,6 +317,17 @@
     console.log("[modules v2] bind OK");
   }
 
+  // Экспорт для game.js
+  window.clanSetupUI = function(){};
+  window.clanSetupEditorUI = function(){};
+  window.clanUpdateUI = function(){ try{ refreshClan(); }catch(e){} };
+  window.clanOpen = openClan;
+  window.clanClose = function(){ var m=byId("modal-clans"); if(m) m.classList.add("hidden"); };
+  window.clanGetBonus = function(){ return window.__clanBonus || 0; };
+  window.clanInvest = investClan;
+  window.clanCanEdit = function(){ return false; };
+  window.hasBadWords = function(){ return false; };
+
   if(document.readyState==="loading"){
     document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 800); });
   } else {
@@ -332,6 +335,7 @@
   }
   window.addEventListener("load", function(){ setTimeout(bind, 1500); });
 })();
+
 /* ==== Krochlupic Auction v1 ==== */
 (function(){
   "use strict";
@@ -558,6 +562,7 @@
   } else { setTimeout(bind, 900); }
   window.addEventListener("load", function(){ setTimeout(bind, 1800); });
 })();
+
 /* ==== Krochlupic Competitions v1 ==== */
 (function(){
   "use strict";
@@ -786,6 +791,7 @@
   } else { setTimeout(bind, 900); }
   window.addEventListener("load", function(){ setTimeout(bind, 1800); });
 })();
+
 /* ==== Krochlupic Season v1 ==== */
 (function(){
   "use strict";
@@ -831,6 +837,7 @@
     document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 1500); });
   } else { setTimeout(bind, 1500); }
 })();
+
 /* ==== Krochlupic FNF v1 ==== */
 (function(){
   "use strict";
@@ -838,17 +845,15 @@
   function fb(){ if(typeof db!=="undefined"&&db) return db; if(typeof firebase!=="undefined"&&firebase.database) return firebase.database(); return null; }
   function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
 
-  // Настройки игры
-  var BPM = 120;             // скорость музыки
-  var BEATS_PER_ARROW = 1;   // через сколько бит летит стрелка
-  var FALL_TIME = 1.8;       // сколько секунд стрелка летит до линии (сек)
-  var DURATION = 60;         // длительность битвы (сек)
-  var HIT_WINDOW = 0.18;     // окно попадания (сек) — чем меньше, тем строже
+  var BPM = 120;
+  var BEATS_PER_ARROW = 1;
+  var FALL_TIME = 1.8;
+  var DURATION = 60;
+  var HIT_WINDOW = 0.18;
   var MAX_HP = 50;
   var DIRS = ["left","up","down","right"];
   var SYM = { left:"◀", up:"▲", down:"▼", right:"▶" };
 
-  // Состояние
   var running = false;
   var hp = MAX_HP;
   var score = 0;
@@ -856,7 +861,7 @@
   var maxCombo = 0;
   var misses = 0;
   var timeLeft = 0;
-  var arrows = [];           // {dir, spawnAt, hitY}
+  var arrows = [];
   var rafId = null;
   var lastTick = 0;
   var nextSpawnAt = 0;
@@ -947,7 +952,6 @@
     timeLeft-=dt;
     if(timeLeft<=0){ timeLeft=0; updateHUD(); stop(true); return; }
 
-    // Спавн стрелок
     var beatMs = 60000 / BPM * BEATS_PER_ARROW;
     if(now >= nextSpawnAt){
       var dir = DIRS[Math.floor(Math.random()*4)];
@@ -955,14 +959,12 @@
       nextSpawnAt = now + beatMs;
     }
 
-    // Проверяем промахи (стрелка улетела ниже)
     var fallMs = FALL_TIME * 1000;
     var toKeep = [];
     for(var i=0;i<arrows.length;i++){
       var a=arrows[i];
       var age = now - a.spawnAt;
       if(age > fallMs + HIT_WINDOW*1000){
-        // промах
         misses++;
         combo=0;
         hp--;
@@ -1019,7 +1021,6 @@
     }
     var el = document.querySelector('.fnf-arrow-btn[data-fnf-dir="'+dir+'"]');
     if(best && bestD <= HIT_WINDOW*1000){
-      // попадание
       arrows = arrows.filter(function(x){ return x!==best; });
       combo++; if(combo>maxCombo) maxCombo=combo;
       var pts = 10 + Math.min(30, combo*2);
@@ -1028,7 +1029,6 @@
       if(typeof vibrate==="function") try{ vibrate(10); }catch(e){}
       if(typeof playSound==="function") try{ playSound("click"); }catch(e){}
     } else {
-      // промах по нажатию
       combo=0;
       hp--;
       if(el){ el.classList.add("miss"); setTimeout(function(){ el.classList.remove("miss"); }, 150); }
@@ -1098,7 +1098,6 @@
       b.addEventListener("mousedown", function(e){ e.preventDefault(); pressLane(dir); });
     });
 
-    // Клавиатура для тестов
     document.addEventListener("keydown", function(e){
       if(!running) return;
       if(e.key==="ArrowLeft") pressLane("left");
@@ -1111,8 +1110,414 @@
     console.log("[fnf v1] OK");
   }
 
+  // Экспорт в window — нужно для секретного триггера (5 кликов по page-nav)
+  window.fnfOpen = openFnf;
+  window.fnfClose = closeFnf;
+
   if(document.readyState==="loading"){
     document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 1000); });
   } else { setTimeout(bind, 1000); }
   window.addEventListener("load", function(){ setTimeout(bind, 2000); });
+})();
+
+/* ==== Krochlupic Admin Console v1 ==== */
+(function(){
+  "use strict";
+  function byId(id){ return document.getElementById(id); }
+  function fb(){ if(typeof db!=="undefined"&&db) return db; if(typeof firebase!=="undefined"&&firebase.database) return firebase.database(); return null; }
+  function me(){ return (typeof profile!=="undefined"&&profile&&profile.id)||""; }
+  function myNick(){ return (typeof profile!=="undefined"&&profile&&profile.nickname)||"Аноним"; }
+  function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+
+  // ===== ADMIN_IDS (3 uid) =====
+  var ADMIN_IDS = ["u_1790687044368_j0ic", "u_1790687777315_g6nn", "u_1791714392411_ap6z"];
+  var LOG_KEY = "clicker-admin-log";
+  var activeBoost = null;
+  var activeEvent = null;
+
+  function isAdmin(){ return ADMIN_IDS.indexOf(me()) !== -1; }
+  function promoUnlocked(){
+    try{
+      if(localStorage.getItem("clicker-admin-unlocked")==="1") return true;
+    }catch(e){}
+    if(typeof adminState!=="undefined" && adminState && adminState.promoUnlocked) return true;
+    return false;
+  }
+  function hasAccess(){ return isAdmin() || promoUnlocked(); }
+
+  function addLog(text, kind){
+    var arr=[];
+    try{ arr=JSON.parse(localStorage.getItem(LOG_KEY)||"[]"); }catch(e){ arr=[]; }
+    arr.unshift({ t: Date.now(), text: text, by: myNick(), kind: kind||"info" });
+    if(arr.length>50) arr=arr.slice(0,50);
+    try{ localStorage.setItem(LOG_KEY, JSON.stringify(arr)); }catch(e){}
+    renderLog();
+  }
+  function renderLog(){
+    var box=byId("admin-log"); if(!box) return;
+    var arr=[];
+    try{ arr=JSON.parse(localStorage.getItem(LOG_KEY)||"[]"); }catch(e){ arr=[]; }
+    if(!arr.length){ box.innerHTML='<div class="admin-log-empty">История пуста</div>'; return; }
+    box.innerHTML=arr.map(function(it){
+      var d=new Date(it.t||0);
+      var tm=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+      return '<div class="admin-log-item"><span class="time">'+tm+'</span>'+
+        '<span class="cmd">'+esc(it.text)+'</span> '+
+        '<span class="author">· '+esc(it.by)+'</span></div>';
+    }).join("");
+  }
+
+  function renderStatus(){
+    var b=byId("admin-status-boost"), e=byId("admin-status-event");
+    if(b){
+      if(activeBoost && activeBoost.active && activeBoost.endsAt>Date.now()){
+        var s=Math.ceil((activeBoost.endsAt-Date.now())/1000);
+        var m=Math.floor(s/60); s=s%60;
+        b.textContent="×"+activeBoost.mult+" · "+m+":"+(s<10?"0":"")+s;
+      } else {
+        b.textContent="нет";
+      }
+    }
+    if(e){
+      if(activeEvent && activeEvent.endsAt>Date.now()){
+        var s2=Math.ceil((activeEvent.endsAt-Date.now())/1000);
+        var m2=Math.floor(s2/60); s2=s2%60;
+        e.textContent=activeEvent.name+" · "+m2+":"+(s2<10?"0":"")+s2;
+      } else {
+        e.textContent="нет";
+      }
+    }
+  }
+
+  function subscribeAdmin(){
+    var d=fb(); if(!d) return;
+    d.ref("admin/boost").on("value", function(s){
+      activeBoost = s.val() || null;
+      renderStatus();
+    });
+    d.ref("admin/events/current").on("value", function(s){
+      activeEvent = s.val() || null;
+      renderStatus();
+    });
+  }
+
+  function installMultiplier(){
+    if(window.__adminMultInstalled) return;
+    window.__adminMultInstalled = true;
+    if(typeof window.getCPS === "function"){
+      var o1 = window.getCPS;
+      window.getCPS = function(){
+        var v = o1();
+        var m = 1;
+        if(activeBoost && activeBoost.active && activeBoost.endsAt>Date.now()) m *= (activeBoost.mult||1);
+        if(activeEvent && activeEvent.endsAt>Date.now()) m *= (activeEvent.mult||1);
+        return v * m;
+      };
+    }
+    if(typeof window.getClickValue === "function"){
+      var o2 = window.getClickValue;
+      window.getClickValue = function(){
+        var v = o2();
+        var m = 1;
+        if(activeBoost && activeBoost.active && activeBoost.endsAt>Date.now()) m *= (activeBoost.mult||1);
+        if(activeEvent && activeEvent.endsAt>Date.now()) m *= (activeEvent.mult||1);
+        return v * m;
+      };
+    }
+  }
+
+  function execCommand(raw){
+    var out = byId("admin-cmd-result");
+    if(out){ out.className="admin-result info"; out.textContent=""; }
+    if(!hasAccess()){ if(out){ out.className="admin-result error"; out.textContent="❌ Нет доступа"; } return; }
+    if(!raw || !raw.trim()) return;
+    var parts = raw.trim().split(/\s+/);
+    var cmd = parts[0].toLowerCase();
+    var d=fb();
+    if(!d){ if(out){ out.className="admin-result error"; out.textContent="Firebase недоступен"; } return; }
+
+    if(cmd==="help"){
+      var help="📖 Команды:\n"+
+        "help — этот список\n"+
+        "status — моё состояние\n"+
+        "boost <mult> <min> — глобальный буст\n"+
+        "boost off — выключить буст\n"+
+        "event <name> <mult> <min> — ивент\n"+
+        "event off — выключить ивент\n"+
+        "gift <amount> — подарок всем игрокам\n"+
+        "message <text> — сообщение всем\n"+
+        "history — история команд";
+      if(out){ out.className="admin-result info"; out.textContent=help; }
+      addLog("help");
+      return;
+    }
+
+    if(cmd==="status"){
+      var lines=[];
+      lines.push("UID: "+me());
+      lines.push("Ник: "+myNick());
+      lines.push("Роль: "+(isAdmin()?"👑 Админ":"пользователь"));
+      lines.push("Промокод: "+(promoUnlocked()?"✅":"нет"));
+      lines.push("Буст: "+(activeBoost&&activeBoost.active?"×"+activeBoost.mult:"—"));
+      lines.push("Ивент: "+(activeEvent?activeEvent.name:"—"));
+      if(out){ out.className="admin-result info"; out.textContent=lines.join("\n"); }
+      addLog("status");
+      return;
+    }
+
+    if(cmd==="boost"){
+      var arg = (parts[1]||"").toLowerCase();
+      if(arg==="off"){
+        d.ref("admin/boost").set({active:false, mult:1, endsAt:0, by:me(), byNick:myNick()});
+        addLog("boost off");
+        if(out){ out.className="admin-result success"; out.textContent="✅ Буст выключен"; }
+        return;
+      }
+      var mult = parseFloat(parts[1]);
+      var min = parseInt(parts[2],10);
+      if(!mult || mult<=0 || !min || min<=0){
+        if(out){ out.className="admin-result error"; out.textContent="❌ Синтаксис: boost <mult> <min> или boost off"; }
+        return;
+      }
+      var endsAt = Date.now() + min*60*1000;
+      d.ref("admin/boost").set({active:true, mult:mult, endsAt:endsAt, by:me(), byNick:myNick()});
+      addLog("boost ×"+mult+" на "+min+" мин", "success");
+      if(out){ out.className="admin-result success"; out.textContent="⚡ Буст ×"+mult+" активен на "+min+" мин"; }
+      return;
+    }
+
+    if(cmd==="event"){
+      var arg2 = (parts[1]||"").toLowerCase();
+      if(arg2==="off"){
+        d.ref("admin/events/current").remove();
+        addLog("event off");
+        if(out){ out.className="admin-result success"; out.textContent="✅ Ивент выключен"; }
+        return;
+      }
+      var name = parts[1];
+      var emult = parseFloat(parts[2])||1.5;
+      var emin = parseInt(parts[3],10)||5;
+      if(!name){
+        if(out){ out.className="admin-result error"; out.textContent="❌ Синтаксис: event <name> <mult> <min>"; }
+        return;
+      }
+      var eendsAt = Date.now() + emin*60*1000;
+      d.ref("admin/events/current").set({
+        name:name, mult:emult, endsAt:eendsAt,
+        by:me(), byNick:myNick()
+      });
+      addLog("event "+name+" ×"+emult+" на "+emin+" мин", "success");
+      if(out){ out.className="admin-result success"; out.textContent="🎉 Ивент «"+name+"» ×"+emult+" на "+emin+" мин"; }
+      return;
+    }
+
+    if(cmd==="gift"){
+      var amt = parseInt(parts[1],10);
+      if(!amt || amt<=0){
+        if(out){ out.className="admin-result error"; out.textContent="❌ Синтаксис: gift <amount>"; }
+        return;
+      }
+      if(!confirm("Отправить подарок " + amt + " монет всем игрокам?")) return;
+      d.ref("users").once("value").then(function(s){
+        var users = s.val() || {};
+        var upd = {};
+        Object.keys(users).forEach(function(uid){
+          var cur = users[uid] && users[uid].pendingCoins || 0;
+          upd["users/"+uid+"/pendingCoins"] = cur + amt;
+        });
+        d.ref().update(upd).then(function(){
+          addLog("gift "+fmt(amt)+" всем", "success");
+          if(out){ out.className="admin-result success"; out.textContent="🎁 Подарок "+fmt(amt)+" отправлен всем игрокам"; }
+        });
+      });
+      return;
+    }
+
+    if(cmd==="message"){
+      var text = parts.slice(1).join(" ");
+      if(!text){
+        if(out){ out.className="admin-result error"; out.textContent="❌ Синтаксис: message <text>"; }
+        return;
+      }
+      d.ref("admin/messages").push().set({
+        text:text, by:me(), byNick:myNick(), ts:Date.now()
+      });
+      addLog("message: "+text, "success");
+      if(out){ out.className="admin-result success"; out.textContent="📢 Сообщение отправлено"; }
+      return;
+    }
+
+    if(cmd==="history"){
+      renderLog();
+      addLog("history");
+      if(out){ out.className="admin-result info"; out.textContent="📜 История в блоке ниже"; }
+      return;
+    }
+
+    if(out){ out.className="admin-result error"; out.textContent="❌ Неизвестная команда. Напиши help"; }
+  }
+
+  function openAdmin(){
+    if(!hasAccess()){ alert("Нет доступа"); return; }
+    var m=byId("modal-admin"); if(m) m.classList.remove("hidden");
+    if(typeof syncScrollLock==="function") try{ syncScrollLock(); }catch(e){}
+    renderStatus();
+    renderLog();
+  }
+  function closeAdmin(){
+    var m=byId("modal-admin"); if(m) m.classList.add("hidden");
+    if(typeof syncScrollLock==="function") try{ syncScrollLock(); }catch(e){}
+  }
+
+  function bind(){
+    var exec=byId("admin-cmd-exec");
+    var inp=byId("admin-cmd-input");
+    if(exec) exec.onclick=function(){
+      var v=inp?inp.value:"";
+      execCommand(v);
+      if(inp) inp.value="";
+    };
+    if(inp) inp.onkeydown=function(e){
+      if(e.key==="Enter"){ execCommand(inp.value); inp.value=""; }
+    };
+
+    document.querySelectorAll(".admin-quick-btn").forEach(function(b){
+      b.onclick=function(){
+        var c=b.dataset.cmd;
+        if(!c) return;
+        if(inp) inp.value=c;
+        execCommand(c);
+        if(inp) inp.value="";
+      };
+    });
+
+    var closeBtn=document.querySelector('[data-close="modal-admin"]');
+    if(closeBtn) closeBtn.onclick=closeAdmin;
+
+    // ===== ИСПРАВЛЕНО: отдельная кнопка админ-консоли =====
+    var adminBtn=byId("admin-open-btn");
+    if(adminBtn){
+      adminBtn.onclick=function(e){
+        e.preventDefault();
+        if(hasAccess()) openAdmin();
+        else alert("Нет доступа");
+      };
+      if(hasAccess()) adminBtn.classList.remove("hidden");
+      else adminBtn.classList.add("hidden");
+    }
+    // advanced-btn (🔧) — оставляем Кликеру 67, ничего не перезаписываем
+
+    subscribeAdmin();
+    installMultiplier();
+    renderStatus();
+    renderLog();
+    console.log("[admin v1] OK");
+  }
+
+  window.adminOpen=openAdmin;
+  window.adminClose=closeAdmin;
+  window.adminSetup=function(){
+    // ===== ИСПРАВЛЕНО: показываем admin-open-btn, не трогаем advanced-btn =====
+    var adminBtn=byId("admin-open-btn");
+    if(adminBtn && hasAccess()) adminBtn.classList.remove("hidden");
+  };
+  window.adminGetBoostMult=function(){
+    var m=1;
+    if(activeBoost && activeBoost.active && activeBoost.endsAt>Date.now()) m *= (activeBoost.mult||1);
+    if(activeEvent && activeEvent.endsAt>Date.now()) m *= (activeEvent.mult||1);
+    return m;
+  };
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(bind, 1200); });
+  } else { setTimeout(bind, 1200); }
+  window.addEventListener("load", function(){ setTimeout(bind, 2200); });
+})();
+
+/* ==== Krochlupic Global Events Banner v1 ==== */
+(function(){
+  "use strict";
+  function byId(id){ return document.getElementById(id); }
+  function fb(){ if(typeof db!=="undefined"&&db) return db; if(typeof firebase!=="undefined"&&firebase.database) return firebase.database(); return null; }
+
+  var activeBoost = null;
+  var activeEvent = null;
+  var tickInterval = null;
+
+  function getOrCreateBanner(){
+    var b = byId("global-event-banner");
+    if(b) return b;
+    b = document.createElement("div");
+    b.id = "global-event-banner";
+    b.style.cssText =
+      "position:fixed;top:0;left:0;right:0;"+
+      "padding:8px 12px;font-size:13px;font-weight:bold;color:#fff;"+
+      "text-align:center;z-index:9998;display:none;"+
+      "box-shadow:0 2px 10px rgba(0,0,0,.5);"+
+      "font-family:sans-serif;pointer-events:none;"+
+      "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"+
+      "text-shadow:0 1px 3px rgba(0,0,0,.7);";
+    document.body.appendChild(b);
+    return b;
+  }
+
+  function fmtTime(ms){
+    if(ms<=0) return "0:00";
+    var s = Math.ceil(ms/1000);
+    var m = Math.floor(s/60); s = s%60;
+    return m+":"+(s<10?"0":"")+s;
+  }
+
+  function render(){
+    var b = getOrCreateBanner();
+    var now = Date.now();
+    var parts = [];
+
+    if(activeBoost && activeBoost.active && activeBoost.endsAt > now){
+      parts.push("⚡ БУСТ ×" + activeBoost.mult + " · " + fmtTime(activeBoost.endsAt - now));
+    }
+    if(activeEvent && activeEvent.endsAt > now){
+      parts.push("🎉 " + activeEvent.name + " ×" + activeEvent.mult + " · " + fmtTime(activeEvent.endsAt - now));
+    }
+
+    if(!parts.length){
+      b.style.display = "none";
+      return;
+    }
+
+    b.textContent = parts.join("   |   ");
+    b.style.display = "block";
+
+    if(activeEvent && activeEvent.endsAt > now){
+      b.style.background = "linear-gradient(90deg,#7b1fa2,#e91e63,#ff5722)";
+    } else if(activeBoost && activeBoost.active && activeBoost.endsAt > now){
+      b.style.background = "linear-gradient(90deg,#4a148c,#7b1fa2)";
+    }
+  }
+
+  function subscribe(){
+    var d = fb();
+    if(!d){ setTimeout(subscribe, 1000); return; }
+    d.ref("admin/boost").on("value", function(s){
+      activeBoost = s.val() || null;
+      render();
+    });
+    d.ref("admin/events/current").on("value", function(s){
+      activeEvent = s.val() || null;
+      render();
+    });
+  }
+
+  function start(){
+    subscribe();
+    if(tickInterval) clearInterval(tickInterval);
+    tickInterval = setInterval(render, 500);
+    console.log("[globalevents v1] OK");
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(start, 1500); });
+  } else { setTimeout(start, 1500); }
+  window.addEventListener("load", function(){ setTimeout(start, 2500); });
 })();
