@@ -326,7 +326,35 @@ var achievements=[
 {id:"pet_phoenix",icon:"🦅",title:"Из пепла",desc:"Получи эпического Феникса",tier:"gold",check:function(){return unlocked._petHasPhoenix===true;}},
 {id:"golden_secret_10",icon:"✨",title:"Охотник за удачей",desc:"Поймайте 10 секретных золотых тапов",tier:"silver",check:function(){return (unlocked._goldenSecretCount||0)>=10;}},
 {id:"golden_secret_50",icon:"🌟",title:"Мастер удачи",desc:"Поймайте 50 секретных золотых тапов",tier:"gold",check:function(){return (unlocked._goldenSecretCount||0)>=50;}},
-{id:"fnf_rhythm",icon:"🎵",title:"Мастер ритма",desc:"Пройти FNF-битву без единого промаха",tier:"gold",check:function(){return unlocked._fnfPerfect===true;}}
+{id:"fnf_rhythm",icon:"🎵",title:"Мастер ритма",desc:"Пройти FNF-битву без единого промаха",tier:"gold",check:function(){return unlocked._fnfPerfect===true;}},
+  {id:"hw_pass", icon:"🏮", title:"Хэллоуинский пасс", desc:"Пройди весь пасс Хэллоуина", tier:"exclusive", check:function(){
+  if(typeof window.halloweenState === "undefined") return false;
+  var c = window.halloweenState.claimedPass || {};
+  return c[15] && c[25] && c[50] && c[100] && c[250] && c[500] && c[1000];
+}},
+{id:"hw_gifts", icon:"🎁", title:"Все подарки Хэллоуина", desc:"Собери все 7 ежедневных подарков", tier:"exclusive", check:function(){
+  if(typeof window.halloweenState === "undefined") return false;
+  var c = window.halloweenState.claimedGifts || {};
+  return c[1] && c[2] && c[3] && c[4] && c[5] && c[6] && c[7];
+}},
+{id:"hw_potions", icon:"🧪", title:"Мастер зелий", desc:"Свари все 5 зелий", tier:"exclusive", check:function(){
+  if(typeof window.halloweenState === "undefined") return false;
+  var b = window.halloweenState.brewedRecipes || {};
+  return b.magic && b.dark && b.blood && b.luck && b.rain;
+}},
+{id:"hw_global", icon:"🌍", title:"Общий вклад", desc:"Внеси свой вклад в общий сбор конфет", tier:"exclusive", check:function(){
+  if(typeof window.halloweenState === "undefined") return false;
+  return (window.halloweenState.globalDeposited || 0) > 0;
+}},
+{id:"hw_complete", icon:"🎉", title:"Хэллоуин завершён", desc:"Пройди всё событие (после 12 ноября)", tier:"exclusive", check:function(){
+  if(Date.now() < new Date("2026-11-12T00:00:00").getTime()) return false;
+  if(typeof window.halloweenState === "undefined") return false;
+  var c = window.halloweenState.claimedPass || {};
+  var g = window.halloweenState.claimedGifts || {};
+  var passDone = c[15] && c[25] && c[50] && c[100] && c[250] && c[500] && c[1000];
+  var giftsDone = g[1] && g[2] && g[3] && g[4] && g[5] && g[6] && g[7];
+  return passDone && giftsDone;
+}},
 ];
 
 var SAVE_KEY="clicker-save";
