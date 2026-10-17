@@ -307,12 +307,11 @@
 <button class="modal-close" data-close="modal-achievements">✕</button>
 <h2 data-i18n="ach.title">🏆 Достижения</h2>
 <div id="ach-filters">
-<button class="ach-filter active" data-tier="all" data-i18n="ach.filter_all">Все</button>
-<button class="ach-filter" data-tier="bronze" data-i18n="ach.filter_bronze">🥉 Бронза</button>
-<button class="ach-filter" data-tier="silver" data-i18n="ach.filter_silver">🥈 Серебро</button>
-<button class="ach-filter" data-tier="gold" data-i18n="ach.filter_gold">🥇 Золото</button>
-</div>
-<div id="achievements-list"></div>
+  <button class="ach-filter active" data-tier="all">Все</button>
+  <button class="ach-filter" data-tier="bronze">🥉 Бронза</button>
+  <button class="ach-filter" data-tier="silver">🥈 Серебро</button>
+  <button class="ach-filter" data-tier="gold">🥇 Золото</button>
+  <button class="ach-filter" data-tier="exclusive">🏆 Эксклюзив</button>
 </div>
 </div>
 
@@ -686,21 +685,27 @@
     <button class="modal-close" data-close="modal-halloween">✕</button>
     <h2>🎃 Хэллоуин 2026</h2>
     <div class="halloween-tabs">
+  <div class="halloween-tabs">
   <button class="halloween-tab active" data-htab="pass">🏮 Пасс</button>
   <button class="halloween-tab" data-htab="global">🌍 Глобал</button>
   <button class="halloween-tab" data-htab="cauldron">🧪 Котёл</button>
+  <button class="halloween-tab" data-htab="house">🏠 Дом</button>
   <button class="halloween-tab" data-htab="gifts">🎁 Подарки</button>
   <button class="halloween-tab" data-htab="night">🌕 Ночь</button>
-      <button class="halloween-tab" data-htab="house">🏠 Дом</button>
   <button class="halloween-tab" data-htab="info">📖 Инфо</button>
 </div>
-    <div id="halloween-pane-pass" class="halloween-pane">
-      <p style="text-align:center;color:#aaa;font-size:13px">Пасс — в разработке</p>
-    </div>
-    <div id="halloween-pane-gifts" class="halloween-pane hidden">
-      <p style="text-align:center;color:#aaa;font-size:13px">Подарки — в разработке</p>
-    </div>
-    <div id="halloween-pane-night" class="halloween-pane hidden">
+    <div id="halloween-pane-pass" class="halloween-pane"></div>
+<div id="halloween-pane-global" class="halloween-pane hidden">
+  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка...</p>
+</div>
+<div id="halloween-pane-cauldron" class="halloween-pane hidden">
+  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка...</p>
+</div>
+<div id="halloween-pane-house" class="halloween-pane hidden">
+  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка...</p>
+</div>
+<div id="halloween-pane-gifts" class="halloween-pane hidden"></div>
+<div id="halloween-pane-night" class="halloween-pane hidden">
   <div id="night-status" style="text-align:center;padding:14px;background:#0e1a30;border-radius:10px;margin-bottom:14px;border:1px solid #4a148c">
     <div id="night-status-icon" style="font-size:38px;margin-bottom:6px">🌙</div>
     <div id="night-status-text" style="font-size:14px;color:#aaa">Загрузка...</div>
@@ -716,28 +721,28 @@
   </div>
   <div style="text-align:center;font-size:12px;color:#7a8aa8;line-height:1.6">
     🌕 Ночь Хэллоуина активна<br>
-    <b style="color:#ffab40">с 21:00 до 03:00</b> (МСК)<br>
-    Призраки и мыши — в следующих шагах
+    <b style="color:#ffab40">с 21:00 до 03:00</b> (МСК)
   </div>
+</div>
+<div id="halloween-pane-info" class="halloween-pane hidden">
+  <div id="hw-info-note" style="display:none;margin-bottom:14px">
+    <div class="hw-note-paper">
+      <div class="hw-note-icon">📜</div>
+      <div class="hw-note-title">Записка Хэллоуина</div>
+      <div class="hw-note-text">«Этот Хэллоуин не похож на другие...»</div>
+      <div class="hw-note-sign">— Таинственный незнакомец</div>
     </div>
-    <div id="halloween-pane-global" class="halloween-pane hidden">
-  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка глобального ивента...</p>
-    </div>
-    <div id="halloween-pane-cauldron" class="halloween-pane hidden">
-  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка котла...</p>
-    </div>
-    <div id="halloween-pane-house" class="halloween-pane hidden">
-  <p style="text-align:center;color:#aaa;font-size:13px">Загрузка дома...</p>
-    </div>
-    <div id="halloween-pane-info" class="halloween-pane hidden">
-      <p style="color:#ddd;font-size:14px;line-height:1.6">
-        🎃 <b>Хэллоуин 2026</b><br>
-        📅 23 октября — 3 ноября<br><br>
-        🏮 <b>Фонарики</b> — выпадают с тапов (0.5%)<br>
-        🎁 <b>Подарки</b> — 7 дней с 24 октября<br>
-        🐾 <b>Лимит-питомец</b> — из яйца только во время ивента
-      </p>
-    </div>
+  </div>
+  <p style="color:#ddd;font-size:14px;line-height:1.6">
+    🎃 <b>Хэллоуин 2026</b><br>
+    📅 23 октября — 12 ноября<br><br>
+    🏮 <b>Фонарики</b> — выпадают с тапов (0.5%)<br>
+    🎁 <b>Подарки</b> — 7 дней с 24 октября<br>
+    🐾 <b>Лимит-питомец</b> — из яйца только во время ивента<br>
+    🏠 <b>Дом</b> — раз в 3 часа<br>
+    🍬 <b>Глобал</b> — общий сбор конфет
+  </p>
+</div>
   </div>
   </div>
 <div id="fnf-overlay" class="hidden">
