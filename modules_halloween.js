@@ -2,11 +2,10 @@
 (function(){
   "use strict";
 
-  // ==== КОНСТАНТЫ ====
   var HALLOWEEN_DEBUG = true;
   var DATE_PASS_START   = new Date("2026-10-23T08:30:00").getTime();
   var DATE_GIFTS_START  = new Date("2026-10-24T08:30:00").getTime();
-  var DATE_END          = new Date("2026-11-03T00:00:00").getTime();
+  var DATE_END          = new Date("2026-11-12T00:00:00").getTime(); // ИСПРАВЛЕНО: 12 ноября
 
   var FLASH_CHANCE = 0.005;
   var NIGHT_START_H = 21;
@@ -28,13 +27,11 @@
 
   var GLOBAL_KEY = "halloween2026/global";
 
-  // ==== УТИЛИТЫ (объявлены В САМОМ НАЧАЛЕ) ====
   function byId(id){ return document.getElementById(id); }
   function show(id){ var m=byId(id); if(m) m.classList.remove("hidden"); }
   function fmt(n){ if(typeof formatNumber==="function") return formatNumber(n); return String(Math.floor(n||0)); }
   function safeRemove(el){ if(el && el.parentNode) el.remove(); }
 
-  // ==== ПАСС ====
   var PASS_LEVELS = [
     { need: 15,   label: "💎 50 кристаллов",           reward: "gems50" },
     { need: 25,   label: "💰 Доход за 1 час",          reward: "coinHour" },
@@ -45,7 +42,6 @@
     { need: 1000, label: "🍬 500 + 💎 100 + 🌑 1500",  reward: "mega" }
   ];
 
-  // ==== ПОДАРКИ ====
   var GIFT_DAYS = [
     { day: 1, label: "🍬 200 конфет",                        reward: "candies200" },
     { day: 2, label: "💎 20 кристаллов",                     reward: "gems20" },
@@ -56,7 +52,6 @@
     { day: 7, label: "🏅 Баннер «Сладость или гадость»",      reward: "bannerHalloween" }
   ];
 
-  // ==== КОТЁЛ ====
   var RECIPES = [
     { id:"magic", icon:"🟣", name:"Магия",  desc:"+25% к CPS",           category:"income", cost:{ gems:5,  candies:100 }, duration: 15*60, effect:{ income:0.25 } },
     { id:"dark",  icon:"⚫", name:"Тьма",   desc:"+30% к тапу",          category:"tap",    cost:{ shards:10, candies:150 }, duration: 10*60, effect:{ tap:0.30 } },
@@ -65,7 +60,6 @@
     { id:"rain",  icon:"🟡", name:"Дождь",  desc:"+50% к осколкам",      category:"shards", cost:{ candies:300 }, duration: 15*60, effect:{ shards:0.50 } }
   ];
 
-  // ==== ГЛОБАЛ ====
   var GLOBAL_LEVELS = [
     { need: 1000,  icon: "🎁", label: "3 сундука",              reward: "chest3" },
     { need: 2500,  icon: "💎", label: "50 кристаллов",          reward: "gems50" },
@@ -79,7 +73,6 @@
     { need: 25000, icon: "🏅", label: "Баннер «Порождение ночи»", reward: "bannerNight" }
   ];
 
-  // ==== СОСТОЯНИЕ ====
   function loadState(){
     try{
       var s = JSON.parse(localStorage.getItem(H_KEY) || "{}");
@@ -95,7 +88,9 @@
         hasTapGhostsEffect: s.hasTapGhostsEffect || false,
         nightQuests: s.nightQuests || null,
         potions: s.potions || {},
-        globalDeposited: s.globalDeposited || 0
+        globalDeposited: s.globalDeposited || 0,
+        brewedRecipes: s.brewedRecipes || {},
+        hasReadHalloweenNote: s.hasReadHalloweenNote || false
       };
     }catch(e){
       return {
@@ -103,14 +98,13 @@
         hasSpookyPet:false, hasPumpkinSkin:false, hasBanner:false,
         hasBannerNight:false, hasTapGhostsEffect:false,
         nightQuests:null, potions:{},
-        globalDeposited:0
+        globalDeposited:0, brewedRecipes:{}, hasReadHalloweenNote:false
       };
     }
   }
   function saveState(s){ try{ localStorage.setItem(H_KEY, JSON.stringify(s)); }catch(e){} }
   var STATE = loadState();
 
-  // ==== МИГРАЦИЯ ====
   (function migrateGlobal(){
     try{
       var raw = localStorage.getItem(H_KEY);
@@ -124,7 +118,6 @@
     }catch(e){}
   })();
 
-  // ==== ВРЕМЯ ====
   function mskNow(){
     var d = new Date();
     return new Date(d.getTime() + (d.getTimezoneOffset() + MSK_OFFSET) * 60000);
@@ -177,7 +170,6 @@
     return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
   }
 
-  // ==== UI ====
   function updateCandiesUI(){
     var el = byId("candies-info"), val = byId("candies");
     if(!el || !val) return;
@@ -197,7 +189,6 @@
     window.__hwTapGhostsEffect = !!STATE.hasTapGhostsEffect;
   }
 
-  // ==== ФОНАРИКИ ====
   function hookTap(){
     var btn = byId("click-btn");
     if(!btn || btn.__hwHooked) return;
@@ -224,15 +215,11 @@
     el.textContent = "🏮 +1";
     el.style.cssText = "position:fixed;left:" + (rect.left + rect.width/2) + "px;top:" + rect.top + "px;transform:translate(-50%,-50%);font-size:26px;font-weight:bold;color:#ffab40;text-shadow:0 0 12px #ff6f00,0 2px 6px rgba(0,0,0,.9);pointer-events:none;z-index:99999;transition:all 1.2s ease-out;";
     document.body.appendChild(el);
-    requestAnimationFrame(function(){
-      el.style.top = (rect.top - 120) + "px";
-      el.style.opacity = "0";
-    });
+    requestAnimationFrame(function(){ el.style.top = (rect.top - 120) + "px"; el.style.opacity = "0"; });
     setTimeout(function(){ safeRemove(el); }, 1300);
     if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
   }
 
-  // ==== ПИТОМЕЦ ====
   function hookPetRoll(){
     if(window.__hwPetRollHooked) return;
     window.__hwPetRollHooked = true;
@@ -251,7 +238,6 @@
     window.halloweenCritBonus = bonus;
   }
 
-  // ==== ПАСС ====
   function grantPassReward(rewardId){
     var ok = true;
     try{
@@ -349,7 +335,6 @@
     });
   }
 
-  // ==== ПОДАРКИ ====
   function grantGiftReward(rewardId){
     var ok = true;
     try{
@@ -463,7 +448,6 @@
     pane.querySelectorAll("[data-hwall]").forEach(function(b){ b.onclick = claimAllGifts; });
   }
 
-  // ==== НОЧЬ + КВЕСТЫ ====
   var NIGHT_QUESTS = { ghosts: { need: 3 }, bats: { need: 5 }, taps: { need: 500 } };
   var NIGHT_QUEST_TOTAL_REWARD = 25;
 
@@ -529,7 +513,6 @@
     updateNightQuestStatus();
   }
 
-  // ==== ПРИЗРАКИ И МЫШИ ====
   var GHOST_MIN_MS = 5*60*1000, GHOST_MAX_MS = 10*60*1000, GHOST_LIFE_MS = 12*1000;
   var BAT_MIN_MS = 3*60*1000, BAT_MAX_MS = 7*60*1000, BAT_FLY_MS = 9*1000;
   var GOLDEN_BAT_CHANCE = 0.12;
@@ -640,7 +623,6 @@
     }, {passive:true});
   })();
 
-  // ==== КОТЁЛ ====
   function getActivePotions(){
     if(!STATE.potions || typeof STATE.potions !== "object") STATE.potions = {};
     var now = Date.now(), changed = false;
@@ -702,6 +684,8 @@
     if(conflict){ alert("⚠️ Уже активно зелье категории «" + recipe.category + "»:\n" + conflict.icon + " " + conflict.name); return; }
     payRecipeCost(recipe);
     STATE.potions[recipe.id] = { endsAt: Date.now() + recipe.duration * 1000 };
+    if(!STATE.brewedRecipes) STATE.brewedRecipes = {};
+    STATE.brewedRecipes[recipe.id] = true; // ИСПРАВЛЕНО: сохраняем для достижения
     saveState(STATE);
     publishPotionBonuses();
     if(typeof updateUI === "function") try{ updateUI(); }catch(e){}
@@ -776,7 +760,6 @@
     publishPotionBonuses();
   }, 1000);
 
-  // ==== ГЛОБАЛ ====
   var globalRef = null;
   var claimsRef = null;
   var globalState = { total: 0, myContribution: 0, myClaims: {}, lastPush: 0 };
@@ -942,7 +925,6 @@
     setTimeout(function(){ safeRemove(popup); }, 4000);
   }
 
-  // ==== СУНДУК КОНФЕТ ====
   function getCandyChestLeft(){
     var last = 0;
     try{ last = parseInt(localStorage.getItem(CANDY_CHEST_KEY) || "0", 10); }catch(e){}
@@ -993,7 +975,6 @@
     }
   }, 1000);
 
-  // ==== РЕНДЕР ГЛОБАЛА ====
   function renderGlobalEvent(){
     var pane = byId("halloween-pane-global");
     if(!pane) return;
@@ -1068,7 +1049,6 @@
     if(depositBtn) depositBtn.onclick = depositToGlobal;
   }
 
-  // ==== ДОМ ====
   function getHouseLeft(){
     var last = 0;
     try{ last = parseInt(localStorage.getItem(HOUSE_KEY) || "0", 10); }catch(e){}
@@ -1181,6 +1161,36 @@
     }
   }, 1000);
 
+  // ==== ЗАПИСКА ====
+  function maybeShowNote(){
+    if(STATE.hasReadHalloweenNote) return;
+    STATE.hasReadHalloweenNote = true;
+    saveState(STATE);
+    showNoteModal();
+    var infoNote = byId("hw-info-note");
+    if(infoNote){ infoNote.style.display = "block"; }
+  }
+  function showNoteModal(){
+    var old = document.querySelector(".hw-note-modal");
+    if(old) old.remove();
+    var modal = document.createElement("div");
+    modal.className = "hw-note-modal";
+    modal.innerHTML =
+      '<div class="hw-note-modal-box">'+
+        '<div class="hw-note-modal-title">📜 Записка Хэллоуина</div>'+
+        '<div class="hw-note-modal-text">'+
+          '«Этот Хэллоуин не похож на другие. Я нашёл эту записку в старом доме на краю города...<br><br>'+
+          'В ней говорилось о ведьмином котле, о духах, которых можно поймать ночью, о конфетах, которые собирают все вместе. И о том, что нужно успеть до 12 ноября.<br><br>'+
+          'Я не знаю, кто это написал. Но я знаю: это приглашение. Примешь ли ты его?»'+
+        '</div>'+
+        '<div class="hw-note-modal-sign">— Таинственный незнакомец</div>'+
+        '<button class="hw-note-modal-btn" onclick="this.closest(\'.hw-note-modal\').remove()">Принять приглашение</button>'+
+      '</div>';
+    document.body.appendChild(modal);
+    if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
+  }
+  window.showHalloweenNote = showNoteModal;
+
   // ==== МОДАЛКА ====
   function bindModal(){
     document.querySelectorAll(".halloween-tab").forEach(function(tb){
@@ -1198,6 +1208,10 @@
         if(pane === "global") renderGlobalEvent();
         if(pane === "cauldron") renderCauldron();
         if(pane === "house") renderHouse();
+        if(pane === "info"){
+          var infoNote = byId("hw-info-note");
+          if(infoNote && STATE.hasReadHalloweenNote) infoNote.style.display = "block";
+        }
       };
     });
   }
@@ -1206,6 +1220,7 @@
     show("modal-halloween");
     if(typeof syncScrollLock === "function"){ try{ syncScrollLock(); }catch(e){} }
     renderPass(); renderGifts(); renderNight(); renderCauldron(); renderGlobalEvent(); renderHouse();
+    setTimeout(maybeShowNote, 300);
   }
   function bindSideBtn(){
     var b = byId("halloween-side-btn");
@@ -1214,7 +1229,6 @@
     b.onclick = function(e){ e.preventDefault(); if(typeof playSound === "function"){ try{ playSound("ui"); }catch(e){} } openHalloween(); };
   }
 
-  // ==== ЗАПУСК ====
   var _started = false;
   function start(){
     if(_started) return;
@@ -1233,7 +1247,6 @@
     console.log("[halloween] Полный модуль запущен");
   }
 
-  // ==== ЭКСПОРТ ====
   window.spawnGhost = spawnGhost;
   window.spawnBat = spawnBat;
   window.claimNightQuest = claimNightQuest;
