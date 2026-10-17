@@ -1170,7 +1170,7 @@
     var infoNote = byId("hw-info-note");
     if(infoNote){ infoNote.style.display = "block"; }
   }
-  function showNoteModal(){
+function showNoteModal(){
     var old = document.querySelector(".hw-note-modal");
     if(old) old.remove();
     var modal = document.createElement("div");
@@ -1184,11 +1184,22 @@
           'Я не знаю, кто это написал. Но я знаю: это приглашение. Примешь ли ты его?»'+
         '</div>'+
         '<div class="hw-note-modal-sign">— Таинственный незнакомец</div>'+
-        '<button class="hw-note-modal-btn" onclick="this.closest(\'.hw-note-modal\').remove()">Принять приглашение</button>'+
+        '<button class="hw-note-modal-btn" id="hw-note-accept-btn">Принять приглашение</button>'+
       '</div>';
     document.body.appendChild(modal);
     if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
-  }
+    
+    var btn = document.getElementById("hw-note-accept-btn");
+    if(btn){
+        btn.onclick = function(){
+            modal.remove();
+            document.body.classList.remove("no-scroll");
+            var m = byId("modal-halloween");
+            if(m) m.classList.remove("hidden");
+            if(typeof syncScrollLock === "function"){ try{ syncScrollLock(); }catch(e){} }
+        };
+    }
+}
   window.showHalloweenNote = showNoteModal;
 
   // ==== МОДАЛКА ====
@@ -1219,9 +1230,14 @@
     if(!isEventActive()){ alert("🎃 Хэллоуин-ивент неактивен\n\nСтарт: 23 октября 08:30"); return; }
     show("modal-halloween");
     if(typeof syncScrollLock === "function"){ try{ syncScrollLock(); }catch(e){} }
-    renderPass(); renderGifts(); renderNight(); renderCauldron(); renderGlobalEvent(); renderHouse();
+    try{ renderPass(); }catch(e){ console.error("Pass:", e); }
+    try{ renderGifts(); }catch(e){ console.error("Gifts:", e); }
+    try{ renderNight(); }catch(e){ console.error("Night:", e); }
+    try{ renderCauldron(); }catch(e){ console.error("Cauldron:", e); }
+    try{ renderGlobalEvent(); }catch(e){ console.error("Global:", e); }
+    try{ renderHouse(); }catch(e){ console.error("House:", e); }
     setTimeout(maybeShowNote, 300);
-  }
+}
   function bindSideBtn(){
     var b = byId("halloween-side-btn");
     if(!b || b.__hwB) return;
