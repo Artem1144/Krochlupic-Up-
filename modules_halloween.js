@@ -22,23 +22,23 @@
   var HOUSE_KEY = "clicker-house-last";
   var HOUSE_COOLDOWN = 3 * 60 * 60 * 1000;
 
-// ==== СБРОС ХЭЛЛОУИН-ПРОГРЕССА ПРИ СМЕНЕ ВЕРСИИ ====
-var HALLOWEEN_EVENT_VERSION = "2026-v1";
-var HALLOWEEN_VERSION_KEY = "clicker-halloween-version";
-(function resetOldHalloweenProgress(){
-  try{
-    var savedVersion = localStorage.getItem(HALLOWEEN_VERSION_KEY);
-    if(savedVersion !== HALLOWEEN_EVENT_VERSION){
-      localStorage.removeItem(H_KEY);
-      localStorage.removeItem(CANDY_CHEST_KEY);
-      localStorage.removeItem(HOUSE_KEY);
-      localStorage.setItem(HALLOWEEN_VERSION_KEY, HALLOWEEN_EVENT_VERSION);
-      console.log("[halloween] Прогресс сброшен (новая версия: " + HALLOWEEN_EVENT_VERSION + ")");
-    }
-  }catch(e){}
-})();
+  // ==== СБРОС ХЭЛЛОУИН-ПРОГРЕССА ПРИ СМЕНЕ ВЕРСИИ ====
+  var HALLOWEEN_EVENT_VERSION = "2026-v1";
+  var HALLOWEEN_VERSION_KEY = "clicker-halloween-version";
+  (function resetOldHalloweenProgress(){
+    try{
+      var savedVersion = localStorage.getItem(HALLOWEEN_VERSION_KEY);
+      if(savedVersion !== HALLOWEEN_EVENT_VERSION){
+        localStorage.removeItem(H_KEY);
+        localStorage.removeItem(CANDY_CHEST_KEY);
+        localStorage.removeItem(HOUSE_KEY);
+        localStorage.setItem(HALLOWEEN_VERSION_KEY, HALLOWEEN_EVENT_VERSION);
+        console.log("[halloween] Прогресс сброшен (новая версия: " + HALLOWEEN_EVENT_VERSION + ")");
+      }
+    }catch(e){}
+  })();
 
-var HOUSE_SAFE = 100;
+  var HOUSE_SAFE = 100;
   var HOUSE_MIN = 50;
   var HOUSE_MAX = 125;
 
@@ -702,7 +702,7 @@ var HOUSE_SAFE = 100;
     payRecipeCost(recipe);
     STATE.potions[recipe.id] = { endsAt: Date.now() + recipe.duration * 1000 };
     if(!STATE.brewedRecipes) STATE.brewedRecipes = {};
-    STATE.brewedRecipes[recipe.id] = true; // ИСПРАВЛЕНО: сохраняем для достижения
+    STATE.brewedRecipes[recipe.id] = true;
     saveState(STATE);
     publishPotionBonuses();
     if(typeof updateUI === "function") try{ updateUI(); }catch(e){}
@@ -1187,7 +1187,7 @@ var HOUSE_SAFE = 100;
     var infoNote = byId("hw-info-note");
     if(infoNote){ infoNote.style.display = "block"; }
   }
-function showNoteModal(){
+  function showNoteModal(){
     var old = document.querySelector(".hw-note-modal");
     if(old) old.remove();
     var modal = document.createElement("div");
@@ -1216,7 +1216,7 @@ function showNoteModal(){
             if(typeof syncScrollLock === "function"){ try{ syncScrollLock(); }catch(e){} }
         };
     }
-}
+  }
   window.showHalloweenNote = showNoteModal;
 
   // ==== МОДАЛКА ====
@@ -1254,7 +1254,7 @@ function showNoteModal(){
     try{ renderGlobalEvent(); }catch(e){ console.error("Global:", e); }
     try{ renderHouse(); }catch(e){ console.error("House:", e); }
     setTimeout(maybeShowNote, 300);
-}
+  }
   function bindSideBtn(){
     var b = byId("halloween-side-btn");
     if(!b || b.__hwB) return;
