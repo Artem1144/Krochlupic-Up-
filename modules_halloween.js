@@ -1,11 +1,11 @@
-/* ==== Krochlupic Halloween 2026 — Полный исправленный модуль ==== */
+/* ==== Krochlupic Halloween 2026 — ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ МОДУЛЬ ==== */
 (function(){
   "use strict";
 
   var HALLOWEEN_DEBUG = false;
   var DATE_PASS_START   = new Date("2026-10-23T08:30:00").getTime();
   var DATE_GIFTS_START  = new Date("2026-10-24T08:30:00").getTime();
-  var DATE_END          = new Date("2026-11-12T00:00:00").getTime(); // ИСПРАВЛЕНО: 12 ноября
+  var DATE_END          = new Date("2026-11-12T00:00:00").getTime();
 
   var FLASH_CHANCE = 0.005;
   var NIGHT_START_H = 21;
@@ -140,6 +140,7 @@
     return new Date(d.getTime() + (d.getTimezoneOffset() + MSK_OFFSET) * 60000);
   }
   function isNightActive(){
+    if(!isPassActive()) return false; // ИСПРАВЛЕНО: ночь не работает, если ивент не активен
     if(HALLOWEEN_DEBUG) return true;
     var h = mskNow().getHours();
     return h >= NIGHT_START_H || h < NIGHT_END_H;
