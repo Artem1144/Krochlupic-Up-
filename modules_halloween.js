@@ -2,7 +2,7 @@
 (function(){
   "use strict";
 
-  var HALLOWEEN_DEBUG = true;
+  var HALLOWEEN_DEBUG = false;
   var DATE_PASS_START   = new Date("2026-10-23T08:30:00").getTime();
   var DATE_GIFTS_START  = new Date("2026-10-24T08:30:00").getTime();
   var DATE_END          = new Date("2026-11-12T00:00:00").getTime(); // ИСПРАВЛЕНО: 12 ноября
@@ -21,7 +21,24 @@
 
   var HOUSE_KEY = "clicker-house-last";
   var HOUSE_COOLDOWN = 3 * 60 * 60 * 1000;
-  var HOUSE_SAFE = 100;
+
+// ==== СБРОС ХЭЛЛОУИН-ПРОГРЕССА ПРИ СМЕНЕ ВЕРСИИ ====
+var HALLOWEEN_EVENT_VERSION = "2026-v1";
+var HALLOWEEN_VERSION_KEY = "clicker-halloween-version";
+(function resetOldHalloweenProgress(){
+  try{
+    var savedVersion = localStorage.getItem(HALLOWEEN_VERSION_KEY);
+    if(savedVersion !== HALLOWEEN_EVENT_VERSION){
+      localStorage.removeItem(H_KEY);
+      localStorage.removeItem(CANDY_CHEST_KEY);
+      localStorage.removeItem(HOUSE_KEY);
+      localStorage.setItem(HALLOWEEN_VERSION_KEY, HALLOWEEN_EVENT_VERSION);
+      console.log("[halloween] Прогресс сброшен (новая версия: " + HALLOWEEN_EVENT_VERSION + ")");
+    }
+  }catch(e){}
+})();
+
+var HOUSE_SAFE = 100;
   var HOUSE_MIN = 50;
   var HOUSE_MAX = 125;
 
