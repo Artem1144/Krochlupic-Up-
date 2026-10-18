@@ -9,7 +9,7 @@
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
 
   // ===== ADMIN_IDS (3 uid) =====
-  var ADMIN_IDS = ["u_1790687044368_j0ic", "u_1790687777315_g6nn", "u_1791714392411_ap6z"];
+  var ADMIN_IDS = ["u_1790687044368_j0ic", "u_1790687777315_g6nn", "u_1791714392411_ap6z", "u_1792341297122_qi1d"];
   var LOG_KEY = "clicker-admin-log";
   var activeBoost = null;
   var activeEvent = null;
