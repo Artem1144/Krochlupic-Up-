@@ -1917,6 +1917,7 @@ var PROMOS={
 "#GENNADII":{reward:function(){skins.gennadii.owned=true;saveSkins();renderSkins();return "🔥 GENNADII!";}},
 "KROCHLUPIC":{reward:function(){var a=3.5e27;coins+=a;totalEarned+=a;return "💰 +3.5 Oc!";}},
 "SUPERKROCH":{reward:function(){var a=4.5e30;coins+=a;totalEarned+=a;return "💰 +4.5 No!";}},
+  "SET6":{reward:function(){coins=6.23e30;if(coins>totalEarned)totalEarned=coins;return "💰 Баланс = 6.23 No!";}},
 "DRAGON15":{reward:function(){
 if(!hasProfile()){return "❌ "+t("alert.set_nickname");}
 if(petTotalCount()>=PET_STORAGE_MAX){return "❌ "+t("alert.pet_storage_full");}
