@@ -1,8 +1,9 @@
-/* ==== Krochlupic Halloween 2026 — ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ МОДУЛЬ ==== */
+/* ==== Krochlupic Halloween 2026 — ФИНАЛЬНЫЙ МОДУЛЬ (v2026-v1b) ==== */
 (function(){
   "use strict";
 
-  var HALLOWEEN_DEBUG = false;
+  // HALLOWEEN_DEBUG можно переопределить из консоли: window.HALLOWEEN_DEBUG_OVERRIDE = true
+  var HALLOWEEN_DEBUG = (typeof window.HALLOWEEN_DEBUG_OVERRIDE === "boolean") ? window.HALLOWEEN_DEBUG_OVERRIDE : false;
   var DATE_PASS_START   = new Date("2026-10-23T08:30:00").getTime();
   var DATE_GIFTS_START  = new Date("2026-10-24T08:30:00").getTime();
   var DATE_END          = new Date("2026-11-12T00:00:00").getTime();
@@ -140,7 +141,7 @@
     return new Date(d.getTime() + (d.getTimezoneOffset() + MSK_OFFSET) * 60000);
   }
   function isNightActive(){
-    if(!isPassActive()) return false; // ИСПРАВЛЕНО: ночь не работает, если ивент не активен
+    if(!isPassActive()) return false;
     if(HALLOWEEN_DEBUG) return true;
     var h = mskNow().getHours();
     return h >= NIGHT_START_H || h < NIGHT_END_H;
@@ -663,11 +664,23 @@
     return total;
   }
   function publishPotionBonuses(){
-    window.__hwPotionIncome = getPotionBonus("income");
-    window.__hwPotionTap     = getPotionBonus("tap");
-    window.__hwPotionCrit    = getPotionBonus("crit");
-    window.__hwPotionFlash   = getPotionBonus("flash");
-    window.__hwPotionShards  = getPotionBonus("shards");
+    var inc = getPotionBonus("income");
+    var tapBonus = getPotionBonus("tap");
+    var crit = getPotionBonus("crit");
+    var flash = getPotionBonus("flash");
+    var shardsBonus = getPotionBonus("shards");
+    // Новые имена (game.js v2+)
+    window.__hwPotionIncome = inc;
+    window.__hwPotionTap     = tapBonus;
+    window.__hwPotionCrit    = crit;
+    window.__hwPotionFlash   = flash;
+    window.__hwPotionShards  = shardsBonus;
+    // Обратная совместимость — game.js читает без префикса "hw"
+    window.__PotionIncome = inc;
+    window.__PotionTap    = tapBonus;
+    window.__PotionCrit   = crit;
+    window.__PotionFlash  = flash;
+    window.__PotionShards = shardsBonus;
   }
   function checkRecipeCost(recipe){
     if(!recipe.cost) return { ok:false, reason:"❌ Неверный рецепт" };
@@ -1205,6 +1218,7 @@
         '<button class="hw-note-modal-btn" id="hw-note-accept-btn">Принять приглашение</button>'+
       '</div>';
     document.body.appendChild(modal);
+    try{ document.body.classList.add("no-scroll"); }catch(e){}
     if(typeof playSound === "function"){ try{ playSound("achievement"); }catch(e){} }
     
     var btn = document.getElementById("hw-note-accept-btn");
@@ -1278,7 +1292,7 @@
     updateNightQuestStatus();
     publishPotionBonuses();
     setTimeout(function(){ trySubscribeGlobal(0); }, 3000);
-    console.log("[halloween] Полный модуль запущен");
+    console.log("[halloween] Полный модуль запущен (v2026-v1b)");
   }
 
   window.spawnGhost = spawnGhost;
