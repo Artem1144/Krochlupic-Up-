@@ -303,18 +303,16 @@
 <div id="modal-boosters" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-boosters">✕</button><h2 data-i18n="boosters.title">📦 Хранилище бустеров</h2><div id="booster-active-banner" class="booster-active-banner hidden"></div><p style="text-align:center;color:#aaa;font-size:13px;margin:0 0 15px" data-i18n="boosters.hint">Купленные бустеры попадают сюда. Активируй по одному.</p><div id="boosters-list" class="boosters-list"></div></div></div>
 
 <div id="modal-achievements" class="modal hidden">
-  <div class="modal-box">
-    <button class="modal-close" data-close="modal-achievements">✕</button>
-    <h2 data-i18n="ach.title">🏆 Достижения</h2>
-    <div id="ach-filters">
-      <button class="ach-filter active" data-tier="all">Все</button>
-      <button class="ach-filter" data-tier="bronze">🥉 Бронза</button>
-      <button class="ach-filter" data-tier="silver">🥈 Серебро</button>
-      <button class="ach-filter" data-tier="gold">🥇 Золото</button>
-      <button class="ach-filter" data-tier="exclusive">🏆 Эксклюзив</button>
-    </div>
-    <div id="achievements-list" class="achievements-list"></div>
-  </div>
+<div class="modal-box">
+<button class="modal-close" data-close="modal-achievements">✕</button>
+<h2 data-i18n="ach.title">🏆 Достижения</h2>
+<div id="ach-filters">
+  <button class="ach-filter active" data-tier="all">Все</button>
+  <button class="ach-filter" data-tier="bronze">🥉 Бронза</button>
+  <button class="ach-filter" data-tier="silver">🥈 Серебро</button>
+  <button class="ach-filter" data-tier="gold">🥇 Золото</button>
+  <button class="ach-filter" data-tier="exclusive">🏆 Эксклюзив</button>
+</div>
 </div>
 
 <div id="modal-quests" class="modal hidden"><div class="modal-box"><button class="modal-close" data-close="modal-quests">✕</button><h2 data-i18n="quests.title">📜 Задания дня</h2><p id="quests-timer" style="text-align:center;color:#aaa;font-size:13px;margin:0 0 15px">⏰ Загрузка...</p><div id="quests-list"></div></div></div>
@@ -686,6 +684,7 @@
   <div class="modal-box">
     <button class="modal-close" data-close="modal-halloween">✕</button>
     <h2>🎃 Хэллоуин 2026</h2>
+    <div class="halloween-tabs">
   <div class="halloween-tabs">
   <button class="halloween-tab active" data-htab="pass">🏮 Пасс</button>
   <button class="halloween-tab" data-htab="global">🌍 Глобал</button>
@@ -955,5 +954,6 @@
 <script src="modules_banners.js"></script>
 <script src="modules_halloween.js"></script>
 <script src="game.js"></script>
+<script src="modules_dayofdead.js"></script> <!-- ДОБАВИТЬ ВОТ ЭТУ СТРОКУ -->
 </body>
   </html>
