@@ -2994,3 +2994,19 @@ setTimeout(function(){khrPetInit();},5500);
 setTimeout(function(){if(typeof processIncomingGifts==="function")processIncomingGifts();},2500);
 (function(){var fr=document.getElementById("activity-row-3");if(fr)fr.style.display="none";var nc=0,nt=null;function h(){nc++;if(nt)clearTimeout(nt);nt=setTimeout(function(){nc=0;},2000);if(nc>=5){nc=0;if(nt)clearTimeout(nt);setTimeout(function(){try{playSound("achievement");vibrate(40);}catch(e){}if(typeof fnfOpen==="function")fnfOpen();},200);}}var p=document.getElementById("page-prev"),n=document.getElementById("page-next");if(p)p.addEventListener("click",h);if(n)n.addEventListener("click",h);})();
 // SW отключён v302
+// === ГЛОБАЛЬНЫЙ ФИКС ЗАКРЫТИЯ МОДАЛОК ===
+document.addEventListener("click", function(e) {
+  // Если нажали на крестик ✕
+  if (e.target.closest(".modal-close")) {
+    var modal = e.target.closest(".modal");
+    if (modal) {
+      modal.classList.add("hidden");
+      if (typeof syncScrollLock === "function") syncScrollLock();
+    }
+  }
+  // Если нажали на темный фон вокруг модалки
+  if (e.target.classList.contains("modal")) {
+    e.target.classList.add("hidden");
+    if (typeof syncScrollLock === "function") syncScrollLock();
+  }
+});
